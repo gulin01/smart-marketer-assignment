@@ -43,6 +43,10 @@ HTML을 **수정하지 않고 원본 그대로 저장**한다. 격리는 렌더�
   `FORM_HOST`, `APP_HOST` 만 허용하고 CORS 프리플라이트에 응답한다.
 - 개발 환경에서는 `APP_HOST === FORM_HOST` 이므로 1번 방어선이 없다. 나머지
   세 겹은 그대로 동작하며, 이 사실을 README에 명시했다.
+- **운영 배포에서는 1번 방어선이 실제로 적용되어 있다** — 관리 화면은
+  `glowup-admin-app.vercel.app`, 공개 폼은 `glowup-forms.vercel.app` 에서 서빙된다.
+  배포본에서 확인한 응답: 폼 오리진의 인증 없는 관리 API 호출 401, 제 3 오리진
+  제출 시도 403, 렌더 라우트 CSP `frame-ancestors` 가 두 도메인으로 한정.
 
 ## 검증
 

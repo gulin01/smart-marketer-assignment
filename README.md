@@ -5,6 +5,19 @@
 운영자가 HTML을 등록 → 폼 생성 → 채널별 배포 링크 획득 → 방문자 제출 →
 캠페인·채널별 방문/방문자/제출/전환율 확인.
 
+## 데모
+
+| | |
+|---|---|
+| 관리 화면 | https://glowup-admin-app.vercel.app |
+| 공개 폼 | https://glowup-forms.vercel.app |
+| API 문서 | https://glowup-admin-app.vercel.app/api-docs |
+| 계정 | `admin@example.com` / `admin1234` |
+
+관리 화면과 공개 폼이 **서로 다른 도메인**에서 서빙됩니다. 업로드된 템플릿이
+실행되는 오리진에는 세션 쿠키가 구조적으로 존재할 수 없습니다
+([ADR 0003](doc/adr/0003-html-isolation.md)).
+
 ---
 
 ## 실행

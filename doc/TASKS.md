@@ -146,8 +146,8 @@ Order matters: each day's checkpoint gates the next day.
 - [x] README with **실행 방법** and **테스트 방법 only** — nothing else
 
 ### Ship
-- [ ] Optional: Vercel + Neon deploy — **not done** (needs your accounts/credentials)
-- [ ] Optional: second Vercel domain for `FORM_HOST` — **not done** (depends on the deploy above)
+- [x] Vercel + Neon deploy — live, migrations applied, operator seeded
+- [x] Second domain for `FORM_HOST` — `glowup-forms.vercel.app`, origin isolation verified live
 - [ ] Email developer@glowuprizz.com — **yours to send**; draft prepared in `doc/SUBMISSION.md`
 
 ---
