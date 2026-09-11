@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Prisma 7 emits TypeScript we neither own nor edit.
+    "generated/**",
+    // Swagger UI bundle, copied from node_modules at build time.
+    "public/swagger/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

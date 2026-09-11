@@ -1,0 +1,760 @@
+openapi: 3.1.0
+
+info:
+  title: Lead Magnet CRM API
+  version: 1.0.0
+  description: |
+    글로우업리즈 개발자 과제 — 리드 수집 및 채널별 성과 분석 플랫폼.
+
+    ## 인증
+    운영자 계정 1개가 환경변수로 시드됩니다. `POST /api/auth/login` 이 암호화된
+    세션 쿠키(`leadmagnet_session`, httpOnly · SameSite=Strict)를 설정하며,
+    `/api/public/*` 과 `/api/auth/login` 을 제외한 모든 엔드포인트가 이를 요구합니다.
+
+    ## 오류 형식
+    모든 오류는 동일한 형태입니다: `{ "error": { "code", "message", "details"? } }`
+
+    ## 지표 정의
+    - **visit** — 공개 폼 페이지 로드 1회
+    - **visitor** — `visitor_id` 쿠키 기준 순 방문자
+    - **conversionRate** — 제출 ÷ 방문자 (0–1, 소수점 4자리)
+
+servers:
+  - url: http://localhost:3000
+    description: 로컬 개발 서버
+
+tags:
+  - name: Auth
+    description: 운영자 인증
+  - name: Templates
+    description: HTML 템플릿 등록
+  - name: Campaigns
+    description: 캠페인 관리
+  - name: Forms
+    description: 커스텀 폼 생성
+  - name: Distribution links
+    description: 채널별 배포 링크
+  - name: Public
+    description: 방문자용 공개 엔드포인트 (인증 불필요)
+  - name: Stats
+    description: 성과 조회
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: 운영자 로그인
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: admin@example.com }
+                password: { type: string, example: admin1234 }
+      responses:
+        "200":
+          description: 로그인 성공 — 세션 쿠키 설정
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: "leadmagnet_session=…; HttpOnly; SameSite=Strict; Path=/"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operator" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401":
+          description: 이메일 또는 비밀번호 불일치 (계정 존재 여부를 구분하지 않음)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: 로그아웃 — 세션 파기
+      responses:
+        "200":
+          description: 로그아웃 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { ok: { type: boolean } }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: 현재 세션 조회
+      responses:
+        "200":
+          description: 로그인된 운영자
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operator" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/templates:
+    get:
+      tags: [Templates]
+      summary: 템플릿 목록
+      responses:
+        "200":
+          description: 등록된 템플릿
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  templates:
+                    type: array
+                    items: { $ref: "#/components/schemas/TemplateSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Templates]
+      summary: HTML 템플릿 등록
+      description: |
+        JSON 또는 multipart 로 업로드합니다. 업로드된 HTML 은 **수정되지 않고 그대로**
+        저장됩니다 (ADR 0003). 검증 조건: `.html` 확장자, 200 KB 이하,
+        `<form>` 정확히 1개, 이름이 있는 입력 필드 1개 이상.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, html]
+              properties:
+                name: { type: string, maxLength: 200 }
+                html: { type: string }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                name: { type: string, description: 생략 시 파일명 사용 }
+      responses:
+        "201":
+          description: 등록 완료
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Template" }
+        "400":
+          description: |
+            `.html` 이 아님 · 200 KB 초과 · `<form>` 없음 · `<form>` 2개 이상 ·
+            이름 있는 입력 필드 없음
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/templates/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Templates]
+      summary: 템플릿 단건 조회 (원본 HTML 포함)
+      responses:
+        "200":
+          description: 템플릿
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Template" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Templates]
+      summary: 템플릿 삭제
+      responses:
+        "200":
+          description: 삭제 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { ok: { type: boolean } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: 해당 템플릿을 사용하는 폼이 존재
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/templates/{id}/preview:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Templates]
+      summary: 관리자 미리보기용 원본 HTML
+      description: 운영 환경과 동일한 샌드박스 iframe 에서만 사용됩니다. 엄격한 CSP 가 적용됩니다.
+      responses:
+        "200":
+          description: 템플릿 HTML
+          content:
+            text/html:
+              schema: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/campaigns:
+    get:
+      tags: [Campaigns]
+      summary: 캠페인 목록
+      responses:
+        "200":
+          description: 캠페인
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaigns:
+                    type: array
+                    items: { $ref: "#/components/schemas/Campaign" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Campaigns]
+      summary: 캠페인 생성
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 200, example: 2026 봄 캠페인 }
+                description: { type: string, maxLength: 2000 }
+      responses:
+        "201":
+          description: 생성 완료
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Campaign" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/campaigns/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Campaigns]
+      summary: 캠페인 단건 조회 (폼 목록 포함)
+      responses:
+        "200":
+          description: 캠페인
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Campaign" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/forms:
+    get:
+      tags: [Forms]
+      summary: 폼 목록
+      parameters:
+        - name: campaignId
+          in: query
+          schema: { type: string }
+          description: 특정 캠페인으로 필터링
+      responses:
+        "200":
+          description: 폼
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forms:
+                    type: array
+                    items: { $ref: "#/components/schemas/Form" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Forms]
+      summary: 커스텀 폼 생성
+      description: 생성과 동시에 4개 채널의 배포 링크가 자동 생성됩니다 (ADR 0006).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [campaignId, templateId, title]
+              properties:
+                campaignId: { type: string }
+                templateId: { type: string }
+                title: { type: string, maxLength: 200 }
+                slug:
+                  type: string
+                  pattern: "^[a-z0-9-]{3,64}$"
+                  description: 생략 시 8자 무작위 slug 자동 생성
+      responses:
+        "201":
+          description: 생성 완료 — 링크 4개 포함
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Form" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: 캠페인 또는 템플릿을 찾을 수 없음
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: slug 중복
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/forms/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Forms]
+      summary: 폼 단건 조회
+      responses:
+        "200":
+          description: 폼
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Form" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Forms]
+      summary: 폼 수정 (제목 · 활성 여부)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string, maxLength: 200 }
+                isActive:
+                  type: boolean
+                  description: false 로 바꾸면 공개 폼이 410 을 반환합니다
+      responses:
+        "200":
+          description: 수정 완료
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Form" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/forms/{id}/links:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Distribution links]
+      summary: 채널별 배포 링크 조회
+      responses:
+        "200":
+          description: 링크 4개
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: "#/components/schemas/DistributionLink" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Distribution links]
+      summary: 배포 링크 재생성
+      description: FORM_HOST 가 환경별로 달라진 경우 사용합니다. 멱등(upsert)입니다.
+      responses:
+        "200":
+          description: 재생성된 링크 4개
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: "#/components/schemas/DistributionLink" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/forms/{id}/submissions:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/From"
+      - $ref: "#/components/parameters/To"
+      - name: format
+        in: query
+        schema: { type: string, enum: [csv] }
+        description: csv 지정 시 UTF-8 BOM 이 포함된 CSV 파일을 내려받습니다
+    get:
+      tags: [Forms]
+      summary: 제출 내역 조회 / CSV 내보내기
+      responses:
+        "200":
+          description: 제출 내역
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  form: { $ref: "#/components/schemas/Form" }
+                  submissions:
+                    type: array
+                    items: { $ref: "#/components/schemas/Submission" }
+            text/csv:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /f/{slug}:
+    parameters:
+      - $ref: "#/components/parameters/Slug"
+      - name: ch
+        in: query
+        schema: { type: string, enum: [instagram, x, youtube, threads] }
+        description: 유입 채널. 알 수 없는 값은 무시되며 폼은 정상 동작합니다.
+    get:
+      tags: [Public]
+      summary: 공개 폼 페이지
+      security: []
+      description: |
+        방문(Visit)을 기록하고 `visitor_id` 쿠키를 발급한 뒤, 운영자 HTML 을
+        샌드박스 iframe 으로 임베드합니다.
+      responses:
+        "200":
+          description: 폼 페이지
+          content:
+            text/html:
+              schema: { type: string }
+        "404": { description: 존재하지 않거나 비활성화된 폼 }
+
+  /f/{slug}/render:
+    parameters:
+      - $ref: "#/components/parameters/Slug"
+      - name: ch
+        in: query
+        schema: { type: string, enum: [instagram, x, youtube, threads] }
+    get:
+      tags: [Public]
+      summary: iframe 내부에 렌더링되는 원본 템플릿
+      security: []
+      description: |
+        운영자 HTML 에 숨김 필드(`__channel`, `__visitor`)와 제출 스크립트를 주입해
+        반환합니다. 세션 쿠키를 절대 읽지 않으며 엄격한 CSP 가 적용됩니다 (ADR 0003).
+      responses:
+        "200":
+          description: 템플릿 HTML
+          headers:
+            Content-Security-Policy:
+              schema: { type: string }
+          content:
+            text/html:
+              schema: { type: string }
+        "404": { description: 폼을 찾을 수 없음 }
+        "410": { description: 비활성화된 폼 }
+
+  /api/public/forms/{slug}/submissions:
+    parameters:
+      - $ref: "#/components/parameters/Slug"
+    post:
+      tags: [Public]
+      summary: 폼 제출
+      security: []
+      description: |
+        샌드박스 iframe 은 불투명 출처(opaque origin)를 가지므로 'Origin: null' 로
+        요청합니다. 허용 출처는 `null`, `FORM_HOST`, `APP_HOST` 뿐입니다.
+        IP + slug 기준 분당 10회로 제한됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [data]
+              properties:
+                channel:
+                  type: [string, "null"]
+                  description: 주입된 `__channel` 값
+                visitorId:
+                  type: [string, "null"]
+                  description: 주입된 `__visitor` 값
+                data:
+                  type: object
+                  additionalProperties: { type: string, maxLength: 5000 }
+                  description: 템플릿이 선언한 필드만 허용됩니다
+      responses:
+        "201":
+          description: 제출 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+                  createdAt: { type: string, format: date-time }
+        "400":
+          description: 본문 형식 오류 또는 템플릿에 없는 필드
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: 허용되지 않은 Origin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: 비활성화된 폼
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: 요청 한도 초과
+          headers:
+            Retry-After:
+              schema: { type: integer }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    options:
+      tags: [Public]
+      summary: CORS 프리플라이트
+      security: []
+      responses:
+        "204": { description: 허용된 Origin }
+        "403": { description: 허용되지 않은 Origin }
+
+  /api/stats/campaigns:
+    parameters:
+      - $ref: "#/components/parameters/From"
+      - $ref: "#/components/parameters/To"
+    get:
+      tags: [Stats]
+      summary: 캠페인별 성과
+      responses:
+        "200":
+          description: 캠페인별 방문 · 방문자 · 제출 · 전환율
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaigns:
+                    type: array
+                    items: { $ref: "#/components/schemas/CampaignStats" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/stats/campaigns/{id}/channels:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/From"
+      - $ref: "#/components/parameters/To"
+    get:
+      tags: [Stats]
+      summary: 특정 캠페인의 채널별 성과
+      description: "4개 채널이 항상 포함되며, 유입 채널이 없는 트래픽은 `channel: null` 행으로 추가됩니다."
+      responses:
+        "200":
+          description: 채널별 지표
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  campaign:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      name: { type: string }
+                  channels:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChannelStats" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: leadmagnet_session
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    Slug:
+      name: slug
+      in: path
+      required: true
+      schema: { type: string }
+    From:
+      name: from
+      in: query
+      schema: { type: string }
+      description: "ISO 날짜 또는 타임스탬프 (예: 2026-01-01)"
+    To:
+      name: to
+      in: query
+      schema: { type: string }
+      description: ISO 날짜 또는 타임스탬프. 날짜만 주면 해당 일자의 23:59:59.999 까지 포함합니다.
+
+  responses:
+    Unauthorized:
+      description: 인증 필요
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    NotFound:
+      description: 대상을 찾을 수 없음
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ValidationError:
+      description: 요청 본문 또는 쿼리 형식 오류
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                [UNAUTHORIZED, FORBIDDEN, NOT_FOUND, GONE, VALIDATION_ERROR,
+                 RATE_LIMITED, CONFLICT, INTERNAL_ERROR]
+            message: { type: string }
+            details: {}
+
+    Channel:
+      type: string
+      enum: [INSTAGRAM, X, YOUTUBE, THREADS]
+
+    Operator:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+
+    TemplateSummary:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        fieldNames: { type: array, items: { type: string } }
+        formCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    Template:
+      allOf:
+        - $ref: "#/components/schemas/TemplateSummary"
+        - type: object
+          properties:
+            html: { type: string, description: 업로드된 원본 HTML }
+
+    Campaign:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: [string, "null"] }
+        formCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+
+    Form:
+      type: object
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        isActive: { type: boolean }
+        campaignId: { type: string }
+        templateId: { type: string }
+        createdAt: { type: string, format: date-time }
+        links:
+          type: array
+          items: { $ref: "#/components/schemas/DistributionLink" }
+
+    DistributionLink:
+      type: object
+      properties:
+        id: { type: string }
+        formId: { type: string }
+        channel: { $ref: "#/components/schemas/Channel" }
+        url:
+          type: string
+          format: uri
+          example: http://localhost:3000/f/6sx9k6hu?ch=instagram
+        createdAt: { type: string, format: date-time }
+
+    Submission:
+      type: object
+      properties:
+        id: { type: string }
+        formId: { type: string }
+        channel: { oneOf: [{ $ref: "#/components/schemas/Channel" }, { type: "null" }] }
+        visitorId: { type: [string, "null"] }
+        name: { type: [string, "null"] }
+        phone: { type: [string, "null"] }
+        email: { type: [string, "null"] }
+        data:
+          type: object
+          additionalProperties: { type: string }
+          description: 제출된 전체 응답 (jsonb)
+        createdAt: { type: string, format: date-time }
+
+    Metrics:
+      type: object
+      properties:
+        visits: { type: integer }
+        visitors: { type: integer }
+        submissions: { type: integer }
+        conversionRate:
+          type: number
+          format: float
+          description: 제출 ÷ 방문자 (0–1). 방문자가 0이면 0.
+          example: 0.5
+
+    CampaignStats:
+      allOf:
+        - type: object
+          properties:
+            campaignId: { type: string }
+            campaignName: { type: string }
+        - $ref: "#/components/schemas/Metrics"
+
+    ChannelStats:
+      allOf:
+        - type: object
+          properties:
+            channel:
+              oneOf:
+                - $ref: "#/components/schemas/Channel"
+                - type: "null"
+              description: null 은 유입 채널이 없는 직접 방문
+        - $ref: "#/components/schemas/Metrics"
+
+security:
+  - sessionCookie: []

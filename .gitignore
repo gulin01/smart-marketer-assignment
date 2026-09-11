@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/generated/prisma
+
+# test output
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+
+# swagger assets, copied from node_modules by scripts/copy-swagger-assets.mjs
+/public/swagger
+
+# agent skill docs vendored by `prisma init` — 71 files of CLI reference, not project code
+/.agents
+/.claude
+/.windsurf
+/skills-lock.json

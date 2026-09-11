@@ -1,0 +1,113 @@
+// Lead-magnet CRM — schema
+// Docs: ../doc/adr/
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// The single seeded platform operator. No public signup (ADR 0002).
+model Operator {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+/// A raw HTML file uploaded by the operator. Stored verbatim — isolation is by
+/// origin + sandboxed iframe + CSP, not by sanitization (ADR 0003).
+model HtmlTemplate {
+  id         String   @id @default(cuid())
+  name       String
+  html       String
+  fieldNames String[]
+  createdAt  DateTime @default(now())
+  forms      Form[]
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  forms       Form[]
+}
+
+model Form {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  templateId String
+  template   HtmlTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+
+  links       DistributionLink[]
+  visits      Visit[]
+  submissions Submission[]
+
+  @@index([campaignId])
+}
+
+/// Fixed channel set (ADR 0006).
+enum Channel {
+  INSTAGRAM
+  X
+  YOUTUBE
+  THREADS
+}
+
+model DistributionLink {
+  id        String   @id @default(cuid())
+  channel   Channel
+  url       String
+  createdAt DateTime @default(now())
+
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, channel])
+}
+
+/// One row per public form page load (ADR 0004).
+model Visit {
+  id        String   @id @default(cuid())
+  channel   Channel?
+  visitorId String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, channel])
+  @@index([formId, visitorId])
+  @@index([createdAt])
+}
+
+/// One row per successful public submission. Answers live in `data` (jsonb);
+/// name/phone/email are mirrored into columns for the CRM list (ADR 0005).
+model Submission {
+  id        String   @id @default(cuid())
+  channel   Channel?
+  visitorId String?
+  name      String?
+  phone     String?
+  email     String?
+  data      Json
+  createdAt DateTime @default(now())
+
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId, channel])
+  @@index([createdAt])
+}

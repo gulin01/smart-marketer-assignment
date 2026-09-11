@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: leadmagnet
+          POSTGRES_PASSWORD: leadmagnet
+          POSTGRES_DB: leadmagnet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leadmagnet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://leadmagnet:leadmagnet@localhost:5432/leadmagnet?schema=public
+      DATABASE_URL_TEST: postgresql://leadmagnet:leadmagnet@localhost:5432/leadmagnet_test?schema=public
+      SESSION_SECRET: ci-session-secret-at-least-32-characters-long
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin1234
+      APP_HOST: http://localhost:3000
+      FORM_HOST: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create the test database
+        run: psql "$DATABASE_URL" -c 'CREATE DATABASE leadmagnet_test OWNER leadmagnet'
+
+      - run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and API tests
+        run: npm test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+        env:
+          E2E_PORT: 3100
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

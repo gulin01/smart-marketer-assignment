@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: leadmagnet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: leadmagnet
+      POSTGRES_PASSWORD: leadmagnet
+      POSTGRES_DB: leadmagnet
+    ports:
+      - "5434:5432"
+    volumes:
+      - leadmagnet-pgdata:/var/lib/postgresql
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leadmagnet -d leadmagnet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  leadmagnet-pgdata:
