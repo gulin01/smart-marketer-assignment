@@ -68,9 +68,14 @@ npm start
 ## 테스트
 
 ```bash
-npm test          # 단위 + API 테스트 (Vitest, 105건)
-npm run test:e2e  # 브라우저 E2E (Playwright, 3건)
+npm test           # 단위 + API 테스트 (Vitest, 105건)
+npm run test:e2e   # 로컬 브라우저 E2E (Playwright, 3건)
+npm run test:prod  # 배포된 데모에 대한 스모크 테스트 (6건)
 ```
+
+`test:prod` 는 서버를 띄우지 않고 **배포본**을 그대로 검사합니다. 생성한 데이터에는
+`[smoke]` 접두사가 붙으며 `npm run clean:prod` 로 정리할 수 있습니다 (정리에는
+`.env.production.local` 의 `DATABASE_URL_UNPOOLED` 가 필요합니다).
 
 두 명령 모두 `DATABASE_URL_TEST` 데이터베이스를 사용하며, 개발 데이터에는
 영향을 주지 않습니다. 마이그레이션은 테스트 실행 시 자동 적용됩니다.
