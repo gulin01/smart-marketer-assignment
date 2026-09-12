@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(json);
 
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "Invalid request body", parsed.error.issues);
+    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
   }
 
   const operator = await prisma.operator.findUnique({
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const valid = await bcrypt.compare(parsed.data.password, hash);
 
   if (!operator || !valid) {
-    return apiError("UNAUTHORIZED", "Invalid email or password");
+    return apiError("UNAUTHORIZED", "이메일 또는 비밀번호가 올바르지 않습니다");
   }
 
   const session = await getSession();

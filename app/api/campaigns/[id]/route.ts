@@ -15,6 +15,6 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
       },
     },
   });
-  if (!campaign) return apiError("NOT_FOUND", "Campaign not found");
+  if (!campaign) return apiError("NOT_FOUND", "캠페인을 찾을 수 없습니다");
   return apiOk(campaign);
 });

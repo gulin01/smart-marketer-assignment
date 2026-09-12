@@ -30,7 +30,7 @@ export async function getSession() {
 
 export class UnauthorizedError extends Error {
   constructor() {
-    super("Authentication required");
+    super("로그인이 필요합니다");
     this.name = "UnauthorizedError";
   }
 }
@@ -58,7 +58,7 @@ export function withOperator<Args extends unknown[]>(
       return await handler(operator, ...args);
     } catch (error) {
       if (error instanceof UnauthorizedError) {
-        return apiError("UNAUTHORIZED", "Authentication required");
+        return apiError("UNAUTHORIZED", "로그인이 필요합니다");
       }
       throw error;
     }

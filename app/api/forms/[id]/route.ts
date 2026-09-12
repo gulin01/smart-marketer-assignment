@@ -21,7 +21,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
       _count: { select: { visits: true, submissions: true } },
     },
   });
-  if (!form) return apiError("NOT_FOUND", "Form not found");
+  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
   return apiOk(form);
 });
 
@@ -29,9 +29,9 @@ export const PATCH = withOperator(async (_operator, request: Request, ctx: Ctx) 
   const { id } = await ctx.params;
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "Invalid request body", parsed.error.issues);
+    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
   }
   const updated = await prisma.form.updateMany({ where: { id }, data: parsed.data });
-  if (updated.count === 0) return apiError("NOT_FOUND", "Form not found");
+  if (updated.count === 0) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
   return apiOk(await prisma.form.findUnique({ where: { id }, include: { links: true } }));
 });

@@ -35,7 +35,7 @@ export const GET = withOperator(async (_operator, request: Request) => {
 export const POST = withOperator(async (_operator, request: Request) => {
   const parsed = createSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "Invalid request body", parsed.error.issues);
+    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
   }
   const { campaignId, templateId, title } = parsed.data;
 
@@ -43,12 +43,12 @@ export const POST = withOperator(async (_operator, request: Request) => {
     prisma.campaign.findUnique({ where: { id: campaignId }, select: { id: true } }),
     prisma.htmlTemplate.findUnique({ where: { id: templateId }, select: { id: true } }),
   ]);
-  if (!campaign) return apiError("NOT_FOUND", "Campaign not found");
-  if (!template) return apiError("NOT_FOUND", "Template not found");
+  if (!campaign) return apiError("NOT_FOUND", "캠페인을 찾을 수 없습니다");
+  if (!template) return apiError("NOT_FOUND", "템플릿을 찾을 수 없습니다");
 
   const slug = parsed.data.slug ?? nanoid();
   if (await prisma.form.findUnique({ where: { slug }, select: { id: true } })) {
-    return apiError("CONFLICT", `Slug "${slug}" is already taken`);
+    return apiError("CONFLICT", `슬러그 "${slug}" 는 이미 사용 중입니다`);
   }
 
   // The four distribution links are created with the form so the operator never

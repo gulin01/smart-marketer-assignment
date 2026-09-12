@@ -17,13 +17,13 @@ export const GET = withOperator(async (_operator, request: Request, ctx: Ctx) =>
   const params = new URL(request.url).searchParams;
 
   const range = parseDateRange(params);
-  if (!range.ok) return apiError("VALIDATION_ERROR", "Invalid date range", range.issues);
+  if (!range.ok) return apiError("VALIDATION_ERROR", "날짜 범위가 올바르지 않습니다", range.issues);
 
   const form = await prisma.form.findUnique({
     where: { id },
     select: { id: true, title: true, slug: true, template: { select: { fieldNames: true } } },
   });
-  if (!form) return apiError("NOT_FOUND", "Form not found");
+  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
 
   const submissions = await prisma.submission.findMany({
     where: {

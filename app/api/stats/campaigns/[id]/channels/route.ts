@@ -11,14 +11,14 @@ export const GET = withOperator(async (_operator, request: Request, ctx: Ctx) =>
 
   const range = parseDateRange(new URL(request.url).searchParams);
   if (!range.ok) {
-    return apiError("VALIDATION_ERROR", "Invalid date range", range.issues);
+    return apiError("VALIDATION_ERROR", "날짜 범위가 올바르지 않습니다", range.issues);
   }
 
   const campaign = await prisma.campaign.findUnique({
     where: { id },
     select: { id: true, name: true },
   });
-  if (!campaign) return apiError("NOT_FOUND", "Campaign not found");
+  if (!campaign) return apiError("NOT_FOUND", "캠페인을 찾을 수 없습니다");
 
   return apiOk({ campaign, channels: await getChannelStats(id, range.range) });
 });

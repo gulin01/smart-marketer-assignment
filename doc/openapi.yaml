@@ -20,6 +20,12 @@ info:
     - **conversionRate** — 제출 ÷ 방문자 (0–1, 소수점 4자리)
 
 servers:
+  # The deployed admin origin is first so "Try it out" on the hosted docs page
+  # targets the live API rather than the reader's localhost.
+  - url: https://glowup-admin-app.vercel.app
+    description: 배포된 데모 — 관리 API
+  - url: https://glowup-forms.vercel.app
+    description: 배포된 데모 — 공개 폼 / 제출 API
   - url: http://localhost:3000
     description: 로컬 개발 서버
 

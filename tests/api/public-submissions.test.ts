@@ -101,7 +101,7 @@ describe("POST /api/public/forms/[slug]/submissions", () => {
     );
     expect(response.status).toBe(400);
     expect(await readJson(response)).toMatchObject({
-      error: { message: "Unknown field(s): is_admin" },
+      error: { message: "템플릿에 없는 필드입니다: is_admin" },
     });
   });
 

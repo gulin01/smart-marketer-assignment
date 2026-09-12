@@ -11,7 +11,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
     where: { id },
     select: { id: true, links: true },
   });
-  if (!form) return apiError("NOT_FOUND", "Form not found");
+  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
   return apiOk({ links: form.links });
 });
 
@@ -19,7 +19,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
 export const POST = withOperator(async (_operator, _request: Request, ctx: Ctx) => {
   const { id } = await ctx.params;
   const form = await prisma.form.findUnique({ where: { id }, select: { slug: true } });
-  if (!form) return apiError("NOT_FOUND", "Form not found");
+  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
 
   const links = await prisma.$transaction(
     CHANNELS.map((channel) =>

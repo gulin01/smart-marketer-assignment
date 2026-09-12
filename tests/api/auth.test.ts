@@ -43,7 +43,7 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(401);
     // Identical to the wrong-password response: no account enumeration.
     const body = await readJson(response);
-    expect(body.error).toMatchObject({ message: "Invalid email or password" });
+    expect(body.error).toMatchObject({ message: "이메일 또는 비밀번호가 올바르지 않습니다" });
   });
 
   it("rejects a malformed body with 400", async () => {

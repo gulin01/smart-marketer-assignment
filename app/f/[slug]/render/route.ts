@@ -24,10 +24,13 @@ export async function GET(
   });
 
   if (!form) {
-    return new Response("Not found", { status: 404, headers: { "content-type": "text/plain" } });
+    return new Response("페이지를 찾을 수 없습니다", {
+      status: 404,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
   }
   if (!form.isActive) {
-    return new Response("This form is no longer accepting responses", {
+    return new Response("이 폼은 더 이상 응답을 받지 않습니다", {
       status: 410,
       headers: { "content-type": "text/plain" },
     });

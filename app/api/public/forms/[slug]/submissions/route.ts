@@ -46,7 +46,7 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const origin = allowedOrigin(request.headers.get("origin"));
   if (!origin) {
-    return apiError("FORBIDDEN", "Origin not allowed");
+    return apiError("FORBIDDEN", "허용되지 않은 요청 출처입니다");
   }
   const cors = corsHeaders(origin);
 
@@ -57,7 +57,7 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const limit = rateLimit(`submit:${ip}:${slug}`, { limit: 10, windowMs: 60_000 });
   if (!limit.allowed) {
-    return apiError("RATE_LIMITED", "Too many submissions, please try again shortly", undefined, {
+    return apiError("RATE_LIMITED", "제출 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요", undefined, {
       ...cors,
       "retry-after": String(limit.retryAfterSeconds),
     });
@@ -65,7 +65,7 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "Invalid request body", parsed.error.issues, cors);
+    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues, cors);
   }
 
   const form = await prisma.form.findUnique({
@@ -73,9 +73,9 @@ export async function POST(request: Request, ctx: Ctx) {
     select: { id: true, isActive: true, template: { select: { fieldNames: true } } },
   });
 
-  if (!form) return apiError("NOT_FOUND", "Form not found", undefined, cors);
+  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다", undefined, cors);
   if (!form.isActive) {
-    return apiError("GONE", "This form is no longer accepting responses", undefined, cors);
+    return apiError("GONE", "이 폼은 더 이상 응답을 받지 않습니다", undefined, cors);
   }
 
   // Only fields declared by the template are accepted — an attacker cannot use
@@ -85,7 +85,7 @@ export async function POST(request: Request, ctx: Ctx) {
   if (unknown.length > 0) {
     return apiError(
       "VALIDATION_ERROR",
-      `Unknown field(s): ${unknown.join(", ")}`,
+      `템플릿에 없는 필드입니다: ${unknown.join(", ")}`,
       { allowedFields: form.template.fieldNames },
       cors,
     );

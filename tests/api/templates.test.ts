@@ -68,7 +68,7 @@ describe("POST /api/templates", () => {
     );
     expect(response.status).toBe(400);
     expect(await readJson(response)).toMatchObject({
-      error: { message: "Only .html files are accepted" },
+      error: { message: "HTML 파일(.html)만 업로드할 수 있습니다" },
     });
   });
 

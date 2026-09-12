@@ -16,18 +16,18 @@ export class TemplateValidationError extends Error {
  */
 export function parseTemplate(html: string): { fieldNames: string[] } {
   if (Buffer.byteLength(html, "utf8") > MAX_TEMPLATE_BYTES) {
-    throw new TemplateValidationError("Template exceeds the 200 KB limit");
+    throw new TemplateValidationError("템플릿 크기가 200 KB를 초과합니다");
   }
 
   const $ = cheerio.load(html);
   const forms = $("form");
 
   if (forms.length === 0) {
-    throw new TemplateValidationError("Template must contain a <form> element");
+    throw new TemplateValidationError("템플릿에 <form> 요소가 없습니다");
   }
   if (forms.length > 1) {
     throw new TemplateValidationError(
-      `Template must contain exactly one <form> element (found ${forms.length})`,
+      `템플릿에는 <form> 요소가 정확히 1개 있어야 합니다 (현재 ${forms.length}개)`,
     );
   }
 
@@ -47,7 +47,7 @@ export function parseTemplate(html: string): { fieldNames: string[] } {
 
   if (fieldNames.size === 0) {
     throw new TemplateValidationError(
-      "Template <form> must contain at least one named input, select or textarea",
+      "템플릿의 <form> 안에 name 속성이 있는 입력 필드가 최소 1개 필요합니다",
     );
   }
 

@@ -16,7 +16,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
     where: { id },
     select: { html: true },
   });
-  if (!template) return apiError("NOT_FOUND", "Template not found");
+  if (!template) return apiError("NOT_FOUND", "템플릿을 찾을 수 없습니다");
 
   return new Response(template.html, {
     headers: {

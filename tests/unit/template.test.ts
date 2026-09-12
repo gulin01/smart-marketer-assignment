@@ -23,12 +23,12 @@ describe("parseTemplate", () => {
   it("rejects more than one form", () => {
     expect(() =>
       parseTemplate(wrap('<form><input name="a"></form><form><input name="b"></form>')),
-    ).toThrow(/exactly one/i);
+    ).toThrow(/정확히 1개/);
   });
 
   it("rejects a form with no named fields", () => {
     expect(() => parseTemplate(wrap("<form><button>Send</button></form>"))).toThrow(
-      /at least one named/i,
+      /입력 필드가 최소 1개/,
     );
   });
 

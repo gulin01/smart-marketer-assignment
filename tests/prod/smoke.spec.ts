@@ -122,6 +122,9 @@ test("full journey: publish a form, submit through a channel link, see it attrib
 
     // The operator's session cookie must not exist on the forms origin.
     const cookies = await visitor.cookies();
+    const names = cookies.map((c) => `${c.name} (domain=${c.domain})`);
+    // Printed so the evidence is visible in the run output, not just asserted.
+    console.log(`\n  cookies on the forms origin: ${names.join(", ") || "(none)"}\n`);
     expect(cookies.map((c) => c.name)).not.toContain("leadmagnet_session");
     await visitor.close();
   });

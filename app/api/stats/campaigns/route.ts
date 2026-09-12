@@ -6,7 +6,7 @@ import { parseDateRange } from "@/lib/date-range";
 export const GET = withOperator(async (_operator, request: Request) => {
   const range = parseDateRange(new URL(request.url).searchParams);
   if (!range.ok) {
-    return apiError("VALIDATION_ERROR", "Invalid date range", range.issues);
+    return apiError("VALIDATION_ERROR", "날짜 범위가 올바르지 않습니다", range.issues);
   }
   return apiOk({ campaigns: await getCampaignStats(range.range) });
 });

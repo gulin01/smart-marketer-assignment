@@ -34,20 +34,20 @@ export const POST = withOperator(async (_operator, request: Request) => {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
-      return apiError("VALIDATION_ERROR", "A `file` field is required");
+      return apiError("VALIDATION_ERROR", "업로드할 파일을 선택해 주세요");
     }
     if (!/\.html?$/i.test(file.name)) {
-      return apiError("VALIDATION_ERROR", "Only .html files are accepted");
+      return apiError("VALIDATION_ERROR", "HTML 파일(.html)만 업로드할 수 있습니다");
     }
     if (file.size > MAX_TEMPLATE_BYTES) {
-      return apiError("VALIDATION_ERROR", "Template exceeds the 200 KB limit");
+      return apiError("VALIDATION_ERROR", "템플릿 크기가 200 KB를 초과합니다");
     }
     html = await file.text();
     name = String(form.get("name") ?? "").trim() || file.name;
   } else {
     const parsed = jsonSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
-      return apiError("VALIDATION_ERROR", "Invalid request body", parsed.error.issues);
+      return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
     }
     ({ name, html } = parsed.data);
   }
