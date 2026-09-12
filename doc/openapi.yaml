@@ -172,6 +172,60 @@ paths:
               schema: { $ref: "#/components/schemas/Template" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [Templates]
+      summary: 템플릿 제자리 수정
+      description: |
+        템플릿 행의 id를 유지한 채 내용을 갱신합니다. 해당 템플릿을 쓰는 모든 폼이
+        즉시 새 내용을 서빙하며, 재연결이 필요 없습니다. 저장 직전 내용은 자동으로
+        버전에 기록됩니다 (ADR 0009).
+
+        입력 필드가 **사라지는** 저장은 `confirmFieldRemoval: true` 없이는 409로
+        거부되고, 삭제될 필드와 영향을 받는 제출 건수를 함께 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [html]
+              properties:
+                html: { type: string }
+                name: { type: string, maxLength: 200 }
+                confirmFieldRemoval:
+                  type: boolean
+                  description: 필드 삭제를 확인했을 때만 true
+      responses:
+        "200":
+          description: 저장 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template: { $ref: "#/components/schemas/Template" }
+                  diff: { $ref: "#/components/schemas/FieldDiff" }
+        "400": { $ref: "#/components/responses/ValidationError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: 입력 필드가 삭제되어 확인이 필요함
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Error"
+                  - type: object
+                    properties:
+                      error:
+                        type: object
+                        properties:
+                          details:
+                            type: object
+                            properties:
+                              removedFields: { type: array, items: { type: string } }
+                              affectedSubmissions: { type: integer }
+                              requiresConfirmation: { type: boolean }
     delete:
       tags: [Templates]
       summary: 템플릿 삭제
@@ -190,6 +244,78 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+
+  /api/templates/{id}/versions:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Templates]
+      summary: 템플릿 변경 이력
+      description: 최근 50건. 용량이 큰 HTML 본문은 제외하고 메타데이터만 반환합니다.
+      responses:
+        "200":
+          description: 버전 목록 (최신순)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  versions:
+                    type: array
+                    items: { $ref: "#/components/schemas/TemplateVersion" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/templates/{id}/versions/{versionId}/restore:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: versionId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [Templates]
+      summary: 이전 버전으로 복원
+      description: |
+        복원이 덮어쓰는 현재 내용도 새 버전으로 기록되므로, 복원 자체를 다시 되돌릴
+        수 있습니다 (ADR 0009).
+      responses:
+        "200":
+          description: 복원 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  template: { $ref: "#/components/schemas/Template" }
+                  diff: { $ref: "#/components/schemas/FieldDiff" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/locale:
+    post:
+      tags: [Auth]
+      summary: 표시 언어 변경
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [locale]
+              properties:
+                locale: { type: string, enum: [ko, en] }
+      responses:
+        "200":
+          description: locale 쿠키 설정됨
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  locale: { type: string }
+        "400": { $ref: "#/components/responses/ValidationError" }
 
   /api/templates/{id}/preview:
     parameters:
@@ -679,6 +805,37 @@ components:
         - type: object
           properties:
             html: { type: string, description: 업로드된 원본 HTML }
+            updatedAt: { type: string, format: date-time }
+            versionCount: { type: integer }
+            usage:
+              type: object
+              description: 이 템플릿을 사용 중인 폼/캠페인 수
+              properties:
+                forms: { type: integer }
+                campaigns: { type: integer }
+
+    TemplateVersion:
+      type: object
+      description: 저장 직전 내용의 스냅샷 (ADR 0009)
+      properties:
+        id: { type: string }
+        fieldNames: { type: array, items: { type: string } }
+        note:
+          type: [string, "null"]
+          description: 복원으로 생성된 버전은 "restored-from:{versionId}"
+        createdAt: { type: string, format: date-time }
+        createdBy:
+          type: [object, "null"]
+          properties:
+            email: { type: string, format: email }
+
+    FieldDiff:
+      type: object
+      description: 편집 전후의 입력 필드 변화
+      properties:
+        added: { type: array, items: { type: string } }
+        removed: { type: array, items: { type: string } }
+        kept: { type: array, items: { type: string } }
 
     Campaign:
       type: object

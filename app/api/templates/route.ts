@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
 import { MAX_TEMPLATE_BYTES, TemplateValidationError, parseTemplate } from "@/lib/template";
+import { apiMessage } from "@/lib/i18n/api";
 
 const jsonSchema = z.object({
   name: z.string().min(1).max(200),
@@ -34,20 +35,20 @@ export const POST = withOperator(async (_operator, request: Request) => {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
-      return apiError("VALIDATION_ERROR", "업로드할 파일을 선택해 주세요");
+      return apiError("VALIDATION_ERROR", await apiMessage("fileRequired"));
     }
     if (!/\.html?$/i.test(file.name)) {
-      return apiError("VALIDATION_ERROR", "HTML 파일(.html)만 업로드할 수 있습니다");
+      return apiError("VALIDATION_ERROR", await apiMessage("htmlOnly"));
     }
     if (file.size > MAX_TEMPLATE_BYTES) {
-      return apiError("VALIDATION_ERROR", "템플릿 크기가 200 KB를 초과합니다");
+      return apiError("VALIDATION_ERROR", await apiMessage("tooLarge"));
     }
     html = await file.text();
     name = String(form.get("name") ?? "").trim() || file.name;
   } else {
     const parsed = jsonSchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) {
-      return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
+      return apiError("VALIDATION_ERROR", await apiMessage("invalidBody"), parsed.error.issues);
     }
     ({ name, html } = parsed.data);
   }
@@ -57,7 +58,7 @@ export const POST = withOperator(async (_operator, request: Request) => {
     ({ fieldNames } = parseTemplate(html));
   } catch (error) {
     if (error instanceof TemplateValidationError) {
-      return apiError("VALIDATION_ERROR", error.message);
+      return apiError("VALIDATION_ERROR", await apiMessage(error.key, error.values));
     }
     throw error;
   }

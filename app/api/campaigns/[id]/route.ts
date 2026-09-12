@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
+import { apiMessage } from "@/lib/i18n/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -15,6 +16,6 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
       },
     },
   });
-  if (!campaign) return apiError("NOT_FOUND", "캠페인을 찾을 수 없습니다");
+  if (!campaign) return apiError("NOT_FOUND", await apiMessage("campaignNotFound"));
   return apiOk(campaign);
 });

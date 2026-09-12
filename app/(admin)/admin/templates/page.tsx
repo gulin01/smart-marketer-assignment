@@ -4,6 +4,7 @@ import {
   CardHeader,
   Code,
   EmptyState,
+  LinkButton,
   PageHeader,
   TBody,
   THead,
@@ -14,11 +15,13 @@ import {
 } from "@/components/ui";
 import TemplateUpload from "./template-upload";
 import TemplatePreview from "./template-preview";
+import { getTranslations } from "@/lib/i18n";
 
 export const metadata = { title: "템플릿 · Lead Magnet CRM" };
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
+  const { t } = await getTranslations();
   const templates = await prisma.htmlTemplate.findMany({
     orderBy: { createdAt: "desc" },
     select: {
@@ -33,24 +36,24 @@ export default async function TemplatesPage() {
   return (
     <>
       <PageHeader
-        title="HTML 템플릿"
-        description="업로드한 HTML은 수정 없이 그대로 저장되고, 방문자에게는 샌드박스 iframe 안에서만 렌더링됩니다. `<form>` 하나와 이름이 있는 입력 필드가 필요합니다."
+        title={t.template.title}
+        description={t.template.description}
       />
 
-      <TemplateUpload />
+      <TemplateUpload t={t.template} />
 
       <Card className="mt-5 overflow-hidden">
-        <CardHeader title="등록된 템플릿" hint={`${templates.length}개`} />
+        <CardHeader title={t.template.registered} hint={String(templates.length)} />
         {templates.length === 0 ? (
-          <EmptyState>아직 업로드된 템플릿이 없습니다.</EmptyState>
+          <EmptyState>{t.template.empty}</EmptyState>
         ) : (
           <Table>
             <THead>
               <tr>
-                <Th>이름</Th>
-                <Th>입력 필드</Th>
-                <Th numeric>사용 폼</Th>
-                <Th numeric>등록일</Th>
+                <Th>{t.template.name}</Th>
+                <Th>{t.template.fields}</Th>
+                <Th numeric>{t.template.usedByForms}</Th>
+                <Th numeric>{t.template.registeredAt}</Th>
                 <Th />
               </tr>
             </THead>
@@ -70,7 +73,19 @@ export default async function TemplatesPage() {
                     {formatDate(template.createdAt)}
                   </Td>
                   <Td className="text-right">
-                    <TemplatePreview templateId={template.id} name={template.name} />
+                    <div className="flex justify-end gap-2">
+                      <TemplatePreview
+                        templateId={template.id}
+                        name={template.name}
+                        t={t.template}
+                      />
+                      <LinkButton
+                        href={`/admin/templates/${template.id}/edit`}
+                        className="px-2.5 py-1 text-xs"
+                      >
+                        {t.template.edit}
+                      </LinkButton>
+                    </div>
                   </Td>
                 </tr>
               ))}

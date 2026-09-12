@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
+import { apiMessage } from "@/lib/i18n/api";
 
 const bodySchema = z.object({
   email: z.email(),
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(json);
 
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
+    return apiError("VALIDATION_ERROR", await apiMessage("invalidBody"), parsed.error.issues);
   }
 
   const operator = await prisma.operator.findUnique({
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   const valid = await bcrypt.compare(parsed.data.password, hash);
 
   if (!operator || !valid) {
-    return apiError("UNAUTHORIZED", "이메일 또는 비밀번호가 올바르지 않습니다");
+    return apiError("UNAUTHORIZED", await apiMessage("invalidCredentials"));
   }
 
   const session = await getSession();

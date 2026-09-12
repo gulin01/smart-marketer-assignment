@@ -4,6 +4,7 @@ import { parseChannel } from "@/lib/channels";
 import { injectFormRuntime } from "@/lib/inject";
 import { env } from "@/lib/env";
 import { VISITOR_COOKIE } from "@/proxy";
+import { apiMessage } from "@/lib/i18n/api";
 
 /**
  * Serves the operator's raw HTML for the sandboxed iframe.
@@ -30,7 +31,7 @@ export async function GET(
     });
   }
   if (!form.isActive) {
-    return new Response("이 폼은 더 이상 응답을 받지 않습니다", {
+    return new Response(await apiMessage("formClosed"), {
       status: 410,
       headers: { "content-type": "text/plain" },
     });

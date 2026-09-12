@@ -16,17 +16,21 @@ model Operator {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+
+  templateVersions TemplateVersion[]
 }
 
 /// A raw HTML file uploaded by the operator. Stored verbatim — isolation is by
 /// origin + sandboxed iframe + CSP, not by sanitization (ADR 0003).
 model HtmlTemplate {
-  id         String   @id @default(cuid())
+  id         String            @id @default(cuid())
   name       String
   html       String
   fieldNames String[]
-  createdAt  DateTime @default(now())
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @default(now()) @updatedAt
   forms      Form[]
+  versions   TemplateVersion[]
 }
 
 model Campaign {
@@ -110,4 +114,22 @@ model Submission {
 
   @@index([formId, channel])
   @@index([createdAt])
+}
+
+/// A saved snapshot of a template's HTML. Every in-app edit writes one before
+/// mutating the live row, so a bad edit is recoverable (ADR 0009).
+model TemplateVersion {
+  id         String   @id @default(cuid())
+  html       String
+  fieldNames String[]
+  note       String?
+  createdAt  DateTime @default(now())
+
+  templateId String
+  template   HtmlTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   Operator? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([templateId, createdAt])
 }

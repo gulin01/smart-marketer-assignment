@@ -206,6 +206,16 @@ Order matters: each day's checkpoint gates the next day.
 its dependent second domain, and sending the submission email — all of which need
 your accounts or credentials.
 
+### 추가 기능 (2026-09-12)
+
+계획과 작업 목록: [`PLAN-editor-i18n.md`](PLAN-editor-i18n.md)
+
+- [x] 템플릿 인앱 편집기 — 코드 + 실시간 미리보기, 제자리 저장
+- [x] 버전 기록 및 복원 (`TemplateVersion`)
+- [x] 입력 필드 삭제 시 영향 건수와 함께 확인
+- [x] 다국어 (한국어 / English, 쿠키 기반)
+- [x] 운영 DB 마이그레이션 적용
+
 ### Verification run
 
 | Gate | Command | Result |

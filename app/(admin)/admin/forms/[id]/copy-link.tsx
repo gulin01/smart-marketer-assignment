@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui";
 
-export default function CopyLink({ url }: { url: string }) {
+export default function CopyLink({
+  url,
+  labels,
+}: {
+  url: string;
+  labels: { copy: string; copied: string };
+}) {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -20,7 +26,7 @@ export default function CopyLink({ url }: { url: string }) {
         }
       }}
     >
-      {copied ? "복사됨" : "복사"}
+      {copied ? labels.copied : labels.copy}
     </Button>
   );
 }

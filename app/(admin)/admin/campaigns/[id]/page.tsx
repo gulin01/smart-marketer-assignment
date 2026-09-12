@@ -21,12 +21,14 @@ import {
 import { ChannelBars, ConversionMeter, StatTile, formatPercent } from "@/components/stats";
 import { getChannelStats } from "@/lib/stats";
 import FormCreate from "./form-create";
+import { getTranslations } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function CampaignDetailPage({ params }: PageProps<"/admin/campaigns/[id]">) {
   const { id } = await params;
 
+  const { t } = await getTranslations();
   const [campaign, templates, channels] = await Promise.all([
     prisma.campaign.findUnique({
       where: { id },
@@ -58,27 +60,27 @@ export default async function CampaignDetailPage({ params }: PageProps<"/admin/c
 
   return (
     <>
-      <Breadcrumb items={[{ label: "캠페인", href: "/admin/campaigns" }, { label: campaign.name }]} />
+      <Breadcrumb items={[{ label: t.campaign.title, href: "/admin/campaigns" }, { label: campaign.name }]} />
       <PageHeader title={campaign.name} description={campaign.description ?? undefined} />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="방문" value={formatNumber(totals.visits)} />
-        <StatTile label="방문자" value={formatNumber(totals.visitors)} />
-        <StatTile label="제출" value={formatNumber(totals.submissions)} />
-        <StatTile label="전환율" value={formatPercent(overall)} emphasis />
+        <StatTile label={t.metric.visits} value={formatNumber(totals.visits)} />
+        <StatTile label={t.metric.visitors} value={formatNumber(totals.visitors)} />
+        <StatTile label={t.metric.submissions} value={formatNumber(totals.submissions)} />
+        <StatTile label={t.metric.conversion} value={formatPercent(overall)} emphasis />
       </div>
 
       <Card className="mb-6 overflow-hidden">
-        <CardHeader title="채널별 성과" hint="어느 채널이 실제로 리드를 만들고 있는지 비교합니다." />
+        <CardHeader title={t.campaign.byChannel} hint={t.campaign.byChannelHint} />
         <div className="grid gap-8 p-5 lg:grid-cols-[1.4fr_1fr]">
           <Table>
             <THead>
               <tr>
-                <Th>채널</Th>
-                <Th numeric>방문</Th>
-                <Th numeric>방문자</Th>
-                <Th numeric>제출</Th>
-                <Th numeric>전환율</Th>
+                <Th>{t.submission.channel}</Th>
+                <Th numeric>{t.metric.visits}</Th>
+                <Th numeric>{t.metric.visitors}</Th>
+                <Th numeric>{t.metric.submissions}</Th>
+                <Th numeric>{t.metric.conversion}</Th>
               </tr>
             </THead>
             <TBody>
@@ -99,32 +101,32 @@ export default async function CampaignDetailPage({ params }: PageProps<"/admin/c
           </Table>
 
           <ChannelBars
-            label="채널별 제출 수"
+            label={t.campaign.submissionsByChannel}
             rows={channels.map((row) => ({ channel: row.channel, value: row.submissions }))}
-            emptyNote="아직 제출이 없습니다. 배포 링크를 공유하면 여기에 채널별로 집계됩니다."
+            emptyNote={t.campaign.noTraffic}
           />
         </div>
       </Card>
 
-      <FormCreate campaignId={campaign.id} templates={templates} />
+      <FormCreate campaignId={campaign.id} templates={templates} t={t.form} />
 
       <Card className="mt-5 overflow-hidden">
-        <CardHeader title="폼" hint={`${campaign.forms.length}개`} />
+        <CardHeader title={t.form.title} hint={String(campaign.forms.length)} />
         {campaign.forms.length === 0 ? (
           <EmptyState>
-            아직 폼이 없습니다.
-            {templates.length === 0 && " 먼저 HTML 템플릿을 업로드하세요."}
+            {t.form.empty}
+            {templates.length === 0 && ` ${t.form.needTemplate}`}
           </EmptyState>
         ) : (
           <Table>
             <THead>
               <tr>
-                <Th>폼</Th>
-                <Th>템플릿</Th>
-                <Th numeric>링크</Th>
-                <Th numeric>제출</Th>
-                <Th>상태</Th>
-                <Th numeric>생성일</Th>
+                <Th>{t.form.title}</Th>
+                <Th>{t.template.title}</Th>
+                <Th numeric>{t.form.links}</Th>
+                <Th numeric>{t.metric.submissions}</Th>
+                <Th>{t.form.status}</Th>
+                <Th numeric>{t.form.createdAt}</Th>
               </tr>
             </THead>
             <TBody>
@@ -146,7 +148,7 @@ export default async function CampaignDetailPage({ params }: PageProps<"/admin/c
                   <Td numeric>{form._count.submissions}</Td>
                   <Td>
                     <Badge tone={form.isActive ? "ok" : "muted"}>
-                      {form.isActive ? "활성" : "비활성"}
+                      {form.isActive ? t.form.active : t.form.inactive}
                     </Badge>
                   </Td>
                   <Td numeric className="whitespace-nowrap text-ink-3">

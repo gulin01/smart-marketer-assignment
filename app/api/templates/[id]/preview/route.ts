@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError } from "@/lib/http";
 import { env } from "@/lib/env";
+import { apiMessage } from "@/lib/i18n/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
     where: { id },
     select: { html: true },
   });
-  if (!template) return apiError("NOT_FOUND", "템플릿을 찾을 수 없습니다");
+  if (!template) return apiError("NOT_FOUND", await apiMessage("templateNotFound"));
 
   return new Response(template.html, {
     headers: {

@@ -15,11 +15,13 @@ import {
 } from "@/components/ui";
 import { ConversionMeter, StatTile, formatPercent } from "@/components/stats";
 import { getCampaignStats } from "@/lib/stats";
+import { getTranslations } from "@/lib/i18n";
 
 export const metadata = { title: "대시보드 · Lead Magnet CRM" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const { t } = await getTranslations();
   const [stats, formCount, templateCount] = await Promise.all([
     getCampaignStats(),
     prisma.form.count(),
@@ -39,43 +41,46 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="대시보드"
-        description="캠페인별 리드 수집 성과를 한 화면에서 비교합니다."
+        title={t.dashboard.title}
+        description={t.dashboard.description}
         action={
           <LinkButton href="/admin/campaigns" variant="primary">
-            캠페인 만들기
+            {t.campaign.create}
           </LinkButton>
         }
       />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="방문" value={formatNumber(totals.visits)} hint="폼 페이지 로드 수" />
-        <StatTile label="방문자" value={formatNumber(totals.visitors)} hint="쿠키 기준 순 방문자" />
-        <StatTile label="제출" value={formatNumber(totals.submissions)} hint="수집된 리드" />
-        <StatTile label="전환율" value={formatPercent(overall)} hint="제출 ÷ 방문자" emphasis />
+        <StatTile label={t.metric.visits} value={formatNumber(totals.visits)} hint={t.metric.visitsHint} />
+        <StatTile label={t.metric.visitors} value={formatNumber(totals.visitors)} hint={t.metric.visitorsHint} />
+        <StatTile label={t.metric.submissions} value={formatNumber(totals.submissions)} hint={t.metric.submissionsHint} />
+        <StatTile label={t.metric.conversion} value={formatPercent(overall)} hint={t.metric.conversionHint} emphasis />
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader
-          title="캠페인별 성과"
-          hint={`캠페인 ${stats.length}개 · 폼 ${formCount}개 · 템플릿 ${templateCount}개`}
+          title={t.dashboard.byCampaign}
+          hint={t.dashboard.counts
+            .replace("{campaigns}", String(stats.length))
+            .replace("{forms}", String(formCount))
+            .replace("{templates}", String(templateCount))}
         />
         {stats.length === 0 ? (
           <EmptyState>
-            아직 캠페인이 없습니다.{" "}
+            {t.dashboard.empty}{" "}
             <Link href="/admin/campaigns" className="font-medium text-accent hover:underline">
-              첫 캠페인 만들기
+              {t.dashboard.createFirst}
             </Link>
           </EmptyState>
         ) : (
           <Table>
             <THead>
               <tr>
-                <Th>캠페인</Th>
-                <Th numeric>방문</Th>
-                <Th numeric>방문자</Th>
-                <Th numeric>제출</Th>
-                <Th numeric>전환율</Th>
+                <Th>{t.campaign.title}</Th>
+                <Th numeric>{t.metric.visits}</Th>
+                <Th numeric>{t.metric.visitors}</Th>
+                <Th numeric>{t.metric.submissions}</Th>
+                <Th numeric>{t.metric.conversion}</Th>
               </tr>
             </THead>
             <TBody>

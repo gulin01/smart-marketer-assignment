@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import { getTranslations } from "@/lib/i18n";
 import NavLink from "./nav-link";
 import LogoutButton from "./logout-button";
-
-const NAV = [
-  { href: "/admin", label: "대시보드" },
-  { href: "/admin/campaigns", label: "캠페인" },
-  { href: "/admin/templates", label: "템플릿" },
-];
+import LocaleSwitch from "./locale-switch";
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const session = await getSession();
   if (!session.operatorId) redirect("/login?next=/admin");
+
+  const { t, locale } = await getTranslations();
+  const nav = [
+    { href: "/admin", label: t.nav.dashboard },
+    { href: "/admin/campaigns", label: t.nav.campaigns },
+    { href: "/admin/templates", label: t.nav.templates },
+  ];
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-canvas">
@@ -22,11 +25,11 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
             <span className="flex size-6 items-center justify-center rounded-md bg-accent text-[10px] font-semibold text-accent-ink">
               LM
             </span>
-            <span className="text-sm font-semibold tracking-tight text-ink">Lead Magnet</span>
+            <span className="text-sm font-semibold tracking-tight text-ink">{t.nav.brand}</span>
           </Link>
 
           <nav className="flex flex-1 items-center gap-1">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <NavLink key={item.href} href={item.href}>
                 {item.label}
               </NavLink>
@@ -40,10 +43,11 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
               rel="noreferrer"
               className="hidden text-xs text-ink-3 transition-colors hover:text-ink sm:inline"
             >
-              API 문서 ↗
+              {t.nav.apiDocs} ↗
             </a>
             <span className="hidden text-xs text-ink-3 md:inline">{session.email}</span>
-            <LogoutButton />
+            <LocaleSwitch locale={locale} label={t.locale.switchTo} />
+            <LogoutButton label={t.nav.logout} />
           </div>
         </div>
       </header>
@@ -52,7 +56,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
 
       <footer className="border-t border-line px-6 py-5">
         <p className="mx-auto max-w-6xl text-xs text-ink-3">
-          방문은 폼 페이지 로드 수, 방문자는 쿠키 기준 순 방문자, 전환율은 제출 ÷ 방문자입니다.
+          {t.metric.footnote}
         </p>
       </footer>
     </div>

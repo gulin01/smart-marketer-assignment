@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 /**
  * Previews the template in exactly the sandbox used in production: no
@@ -11,9 +12,11 @@ import { Button } from "@/components/ui";
 export default function TemplatePreview({
   templateId,
   name,
+  t,
 }: {
   templateId: string;
   name: string;
+  t: Dictionary["template"];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -27,7 +30,7 @@ export default function TemplatePreview({
   return (
     <>
       <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => setOpen(true)}>
-        미리보기
+        {t.preview}
       </Button>
 
       {open && (
@@ -38,7 +41,7 @@ export default function TemplatePreview({
           <div
             role="dialog"
             aria-modal="true"
-            aria-label={`${name} 미리보기`}
+            aria-label={`${name} — ${t.preview}`}
             onClick={(event) => event.stopPropagation()}
             className="flex h-full max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xl"
           >
@@ -46,15 +49,15 @@ export default function TemplatePreview({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-ink">{name}</p>
                 <p className="mt-0.5 text-xs text-ink-3">
-                  운영 환경과 동일한 샌드박스에서 렌더링됩니다.
+                  {t.previewHint}
                 </p>
               </div>
               <Button variant="secondary" className="px-2.5 py-1 text-xs" onClick={() => setOpen(false)}>
-                닫기
+                {t.close}
               </Button>
             </header>
             <iframe
-              title={`${name} 미리보기`}
+              title={`${name} — ${t.preview}`}
               src={`/api/templates/${templateId}/preview`}
               sandbox="allow-forms allow-scripts"
               className="flex-1 bg-white"

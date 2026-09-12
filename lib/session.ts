@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { getIronSession, type SessionOptions } from "iron-session";
 import { env } from "./env";
 import { apiError } from "./http";
+import { apiMessage } from "@/lib/i18n/api";
 
 export interface SessionData {
   operatorId?: string;
@@ -30,7 +31,7 @@ export async function getSession() {
 
 export class UnauthorizedError extends Error {
   constructor() {
-    super("로그인이 필요합니다");
+    super("Authentication required");
     this.name = "UnauthorizedError";
   }
 }
@@ -58,7 +59,7 @@ export function withOperator<Args extends unknown[]>(
       return await handler(operator, ...args);
     } catch (error) {
       if (error instanceof UnauthorizedError) {
-        return apiError("UNAUTHORIZED", "로그인이 필요합니다");
+        return apiError("UNAUTHORIZED", await apiMessage("unauthorized"));
       }
       throw error;
     }

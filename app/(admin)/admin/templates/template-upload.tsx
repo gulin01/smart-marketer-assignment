@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, ErrorText, Field, inputClass } from "@/components/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export default function TemplateUpload() {
+export default function TemplateUpload({ t }: { t: Dictionary["template"] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -20,7 +21,7 @@ export default function TemplateUpload() {
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setError(body?.error?.message ?? "업로드에 실패했습니다");
+      setError(body?.error?.message ?? t.uploadFailed);
       setPending(false);
       return;
     }
@@ -34,11 +35,11 @@ export default function TemplateUpload() {
   return (
     <Card className="p-5">
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
-        <Field label="이름 (선택)" className="min-w-52 flex-1">
-          <input name="name" placeholder="비워두면 파일명을 사용합니다" className={inputClass} />
+        <Field label={t.nameOptional} className="min-w-52 flex-1">
+          <input name="name" placeholder={t.namePlaceholder} className={inputClass} />
         </Field>
 
-        <Field label="HTML 파일" className="min-w-52 flex-1" hint="최대 200 KB · .html">
+        <Field label={t.file} className="min-w-52 flex-1" hint={t.fileHint}>
           <input
             name="file"
             type="file"
@@ -50,11 +51,11 @@ export default function TemplateUpload() {
         </Field>
 
         <Button type="submit" disabled={pending}>
-          {pending ? "업로드 중…" : "업로드"}
+          {pending ? t.uploading : t.upload}
         </Button>
 
         {fileName && !error && (
-          <p className="w-full text-xs text-ink-3">선택된 파일: {fileName}</p>
+          <p className="w-full text-xs text-ink-3">{t.selected.replace("{name}", fileName)}</p>
         )}
         {error && <div className="w-full">{<ErrorText>{error}</ErrorText>}</div>}
       </form>

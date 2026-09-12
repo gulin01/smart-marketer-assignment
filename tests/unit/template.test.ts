@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TemplateValidationError, extractCrmFields, parseTemplate } from "@/lib/template";
+import { TemplateValidationError, diffFields, extractCrmFields, parseTemplate } from "@/lib/template";
 
 const wrap = (body: string) => `<!doctype html><html><body>${body}</body></html>`;
 
@@ -23,12 +23,12 @@ describe("parseTemplate", () => {
   it("rejects more than one form", () => {
     expect(() =>
       parseTemplate(wrap('<form><input name="a"></form><form><input name="b"></form>')),
-    ).toThrow(/정확히 1개/);
+    ).toThrow(/manyForms/);
   });
 
   it("rejects a form with no named fields", () => {
     expect(() => parseTemplate(wrap("<form><button>Send</button></form>"))).toThrow(
-      /입력 필드가 최소 1개/,
+      /noNamedFields/,
     );
   });
 
@@ -60,7 +60,7 @@ describe("parseTemplate", () => {
 
   it("rejects templates over 200 KB", () => {
     const huge = wrap(`<form><input name="a"></form>${"x".repeat(210 * 1024)}`);
-    expect(() => parseTemplate(huge)).toThrow(/200 KB/);
+    expect(() => parseTemplate(huge)).toThrow(/tooLarge/);
   });
 });
 
@@ -87,5 +87,25 @@ describe("extractCrmFields", () => {
     expect(extractCrmFields({ email: "first@e.com", "e-mail": "second@e.com" }).email).toBe(
       "first@e.com",
     );
+  });
+});
+
+describe("diffFields", () => {
+  it("reports added, removed and kept fields", () => {
+    expect(diffFields(["name", "phone"], ["name", "email"])).toEqual({
+      added: ["email"],
+      removed: ["phone"],
+      kept: ["name"],
+    });
+  });
+
+  it("reports nothing when the field set is unchanged", () => {
+    const diff = diffFields(["name", "phone"], ["phone", "name"]);
+    expect(diff.added).toEqual([]);
+    expect(diff.removed).toEqual([]);
+  });
+
+  it("treats a first version as all-added", () => {
+    expect(diffFields([], ["name"])).toMatchObject({ added: ["name"], removed: [] });
   });
 });

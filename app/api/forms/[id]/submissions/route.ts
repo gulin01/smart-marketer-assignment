@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
 import { parseDateRange } from "@/lib/date-range";
+import { apiMessage } from "@/lib/i18n/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -17,13 +18,13 @@ export const GET = withOperator(async (_operator, request: Request, ctx: Ctx) =>
   const params = new URL(request.url).searchParams;
 
   const range = parseDateRange(params);
-  if (!range.ok) return apiError("VALIDATION_ERROR", "날짜 범위가 올바르지 않습니다", range.issues);
+  if (!range.ok) return apiError("VALIDATION_ERROR", await apiMessage("invalidDateRange"), range.issues);
 
   const form = await prisma.form.findUnique({
     where: { id },
     select: { id: true, title: true, slug: true, template: { select: { fieldNames: true } } },
   });
-  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
+  if (!form) return apiError("NOT_FOUND", await apiMessage("formNotFound"));
 
   const submissions = await prisma.submission.findMany({
     where: {

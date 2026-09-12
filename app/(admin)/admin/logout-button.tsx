@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui";
 
-export default function LogoutButton() {
+export default function LogoutButton({ label }: { label: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -20,7 +20,7 @@ export default function LogoutButton() {
         router.refresh();
       }}
     >
-      로그아웃
+      {label}
     </Button>
   );
 }

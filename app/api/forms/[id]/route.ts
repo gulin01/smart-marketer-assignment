@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
+import { apiMessage } from "@/lib/i18n/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -21,7 +22,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
       _count: { select: { visits: true, submissions: true } },
     },
   });
-  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
+  if (!form) return apiError("NOT_FOUND", await apiMessage("formNotFound"));
   return apiOk(form);
 });
 
@@ -29,9 +30,9 @@ export const PATCH = withOperator(async (_operator, request: Request, ctx: Ctx) 
   const { id } = await ctx.params;
   const parsed = patchSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return apiError("VALIDATION_ERROR", "요청 형식이 올바르지 않습니다", parsed.error.issues);
+    return apiError("VALIDATION_ERROR", await apiMessage("invalidBody"), parsed.error.issues);
   }
   const updated = await prisma.form.updateMany({ where: { id }, data: parsed.data });
-  if (updated.count === 0) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
+  if (updated.count === 0) return apiError("NOT_FOUND", await apiMessage("formNotFound"));
   return apiOk(await prisma.form.findUnique({ where: { id }, include: { links: true } }));
 });

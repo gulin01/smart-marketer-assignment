@@ -14,7 +14,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const SESSION_COOKIE = "leadmagnet_session";
 export const VISITOR_COOKIE = "visitor_id";
 
-const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/public"];
+const PUBLIC_API_PREFIXES = ["/api/auth/login", "/api/public", "/api/locale"];
 
 const VISITOR_COOKIE_OPTIONS = {
   httpOnly: false, // the injected form script reads nothing from it, but analytics debugging is easier

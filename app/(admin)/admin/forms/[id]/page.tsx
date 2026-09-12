@@ -16,12 +16,14 @@ import {
 import { StatTile, formatPercent } from "@/components/stats";
 import { getFormMetrics } from "@/lib/stats";
 import CopyLink from "./copy-link";
+import { getTranslations } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
 export default async function FormDetailPage({ params }: PageProps<"/admin/forms/[id]">) {
   const { id } = await params;
 
+  const { t } = await getTranslations();
   const [form, metrics] = await Promise.all([
     prisma.form.findUnique({
       where: { id },
@@ -40,34 +42,36 @@ export default async function FormDetailPage({ params }: PageProps<"/admin/forms
     <>
       <Breadcrumb
         items={[
-          { label: "캠페인", href: "/admin/campaigns" },
+          { label: t.campaign.title, href: "/admin/campaigns" },
           { label: form.campaign.name, href: `/admin/campaigns/${form.campaign.id}` },
           { label: form.title },
         ]}
       />
       <PageHeader
         title={form.title}
-        description={`템플릿 ${form.template.name} · 입력 필드 ${form.template.fieldNames.join(", ")}`}
+        description={`${t.template.title} · ${form.template.name} · ${form.template.fieldNames.join(", ")}`}
         action={
           <LinkButton href={`/admin/forms/${form.id}/submissions`} variant="primary">
-            제출 내역 보기
+            {t.form.viewSubmissions}
           </LinkButton>
         }
       />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="방문" value={formatNumber(metrics.visits)} />
-        <StatTile label="방문자" value={formatNumber(metrics.visitors)} />
-        <StatTile label="제출" value={formatNumber(metrics.submissions)} />
-        <StatTile label="전환율" value={formatPercent(metrics.conversionRate)} emphasis />
+        <StatTile label={t.metric.visits} value={formatNumber(metrics.visits)} />
+        <StatTile label={t.metric.visitors} value={formatNumber(metrics.visitors)} />
+        <StatTile label={t.metric.submissions} value={formatNumber(metrics.submissions)} />
+        <StatTile label={t.metric.conversion} value={formatPercent(metrics.conversionRate)} emphasis />
       </div>
 
       <Card className="overflow-hidden">
         <CardHeader
-          title="채널별 배포 링크"
-          hint="각 링크로 들어온 방문과 제출이 해당 채널로 집계됩니다."
+          title={t.form.distributionLinks}
+          hint={t.form.distributionHint}
           action={
-            <Badge tone={form.isActive ? "ok" : "muted"}>{form.isActive ? "활성" : "비활성"}</Badge>
+            <Badge tone={form.isActive ? "ok" : "muted"}>
+              {form.isActive ? t.form.active : t.form.inactive}
+            </Badge>
           }
         />
         <ul className="divide-y divide-line">
@@ -87,14 +91,14 @@ export default async function FormDetailPage({ params }: PageProps<"/admin/forms
               </span>
 
               <span className="flex shrink-0 items-center gap-2">
-                <CopyLink url={link.url} />
+                <CopyLink url={link.url} labels={{ copy: t.form.copy, copied: t.form.copied }} />
                 <AnchorButton
                   href={link.url}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="px-2.5 py-1 text-xs"
                 >
-                  열기 ↗
+                  {t.form.open}
                 </AnchorButton>
               </span>
             </li>

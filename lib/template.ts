@@ -2,9 +2,17 @@ import * as cheerio from "cheerio";
 
 export const MAX_TEMPLATE_BYTES = 200 * 1024; // 200 KB
 
+/**
+ * Carries a dictionary key rather than finished prose: parsing also runs outside
+ * a request scope (scripts, tests), where there is no locale to resolve.
+ */
 export class TemplateValidationError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(
+    readonly key: "tooLarge" | "noForm" | "manyForms" | "noNamedFields",
+    readonly values: Record<string, string | number> = {},
+    message?: string,
+  ) {
+    super(message ?? key);
     this.name = "TemplateValidationError";
   }
 }
@@ -16,19 +24,17 @@ export class TemplateValidationError extends Error {
  */
 export function parseTemplate(html: string): { fieldNames: string[] } {
   if (Buffer.byteLength(html, "utf8") > MAX_TEMPLATE_BYTES) {
-    throw new TemplateValidationError("템플릿 크기가 200 KB를 초과합니다");
+    throw new TemplateValidationError("tooLarge");
   }
 
   const $ = cheerio.load(html);
   const forms = $("form");
 
   if (forms.length === 0) {
-    throw new TemplateValidationError("템플릿에 <form> 요소가 없습니다");
+    throw new TemplateValidationError("noForm");
   }
   if (forms.length > 1) {
-    throw new TemplateValidationError(
-      `템플릿에는 <form> 요소가 정확히 1개 있어야 합니다 (현재 ${forms.length}개)`,
-    );
+    throw new TemplateValidationError("manyForms", { count: forms.length });
   }
 
   const fieldNames = new Set<string>();
@@ -46,9 +52,7 @@ export function parseTemplate(html: string): { fieldNames: string[] } {
     });
 
   if (fieldNames.size === 0) {
-    throw new TemplateValidationError(
-      "템플릿의 <form> 안에 name 속성이 있는 입력 필드가 최소 1개 필요합니다",
-    );
+    throw new TemplateValidationError("noNamedFields");
   }
 
   return { fieldNames: [...fieldNames] };
@@ -72,4 +76,21 @@ export function extractCrmFields(data: Record<string, string>) {
     }
   }
   return result;
+}
+
+export interface FieldDiff {
+  added: string[];
+  removed: string[];
+  kept: string[];
+}
+
+/** Compares a template's declared fields before and after an edit (ADR 0009). */
+export function diffFields(previous: string[], next: string[]): FieldDiff {
+  const before = new Set(previous);
+  const after = new Set(next);
+  return {
+    added: next.filter((field) => !before.has(field)),
+    removed: previous.filter((field) => !after.has(field)),
+    kept: previous.filter((field) => after.has(field)),
+  };
 }

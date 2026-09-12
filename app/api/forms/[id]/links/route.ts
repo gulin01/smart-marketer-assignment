@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { withOperator } from "@/lib/session";
 import { apiError, apiOk } from "@/lib/http";
 import { CHANNELS, distributionUrl } from "@/lib/channels";
+import { apiMessage } from "@/lib/i18n/api";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -11,7 +12,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
     where: { id },
     select: { id: true, links: true },
   });
-  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
+  if (!form) return apiError("NOT_FOUND", await apiMessage("formNotFound"));
   return apiOk({ links: form.links });
 });
 
@@ -19,7 +20,7 @@ export const GET = withOperator(async (_operator, _request: Request, ctx: Ctx) =
 export const POST = withOperator(async (_operator, _request: Request, ctx: Ctx) => {
   const { id } = await ctx.params;
   const form = await prisma.form.findUnique({ where: { id }, select: { slug: true } });
-  if (!form) return apiError("NOT_FOUND", "폼을 찾을 수 없습니다");
+  if (!form) return apiError("NOT_FOUND", await apiMessage("formNotFound"));
 
   const links = await prisma.$transaction(
     CHANNELS.map((channel) =>

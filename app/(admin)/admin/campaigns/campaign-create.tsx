@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, ErrorText, Field, inputClass } from "@/components/ui";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-export default function CampaignCreate() {
+export default function CampaignCreate({ t }: { t: Dictionary["campaign"] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -27,7 +28,7 @@ export default function CampaignCreate() {
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setError(body?.error?.message ?? "생성에 실패했습니다");
+      setError(body?.error?.message ?? t.createFailed);
       setPending(false);
       return;
     }
@@ -40,14 +41,14 @@ export default function CampaignCreate() {
   return (
     <Card className="p-5">
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
-        <Field label="캠페인 이름" className="min-w-56 flex-1">
-          <input name="name" required placeholder="2026 봄 프로모션" className={inputClass} />
+        <Field label={t.name} className="min-w-56 flex-1">
+          <input name="name" required placeholder={t.namePlaceholder} className={inputClass} />
         </Field>
-        <Field label="설명 (선택)" className="min-w-56 flex-1">
-          <input name="description" placeholder="간단한 메모" className={inputClass} />
+        <Field label={t.descriptionLabel} className="min-w-56 flex-1">
+          <input name="description" placeholder={t.descriptionPlaceholder} className={inputClass} />
         </Field>
         <Button type="submit" disabled={pending}>
-          {pending ? "생성 중…" : "캠페인 생성"}
+          {pending ? t.creating : t.create}
         </Button>
         {error && <div className="w-full">{<ErrorText>{error}</ErrorText>}</div>}
       </form>

@@ -13,11 +13,13 @@ import {
   formatDate,
 } from "@/components/ui";
 import CampaignCreate from "./campaign-create";
+import { getTranslations } from "@/lib/i18n";
 
 export const metadata = { title: "캠페인 · Lead Magnet CRM" };
 export const dynamic = "force-dynamic";
 
 export default async function CampaignsPage() {
+  const { t } = await getTranslations();
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { forms: true } } },
@@ -26,23 +28,23 @@ export default async function CampaignsPage() {
   return (
     <>
       <PageHeader
-        title="캠페인"
-        description="캠페인 단위로 폼을 묶고, 채널별 성과를 비교합니다."
+        title={t.campaign.title}
+        description={t.campaign.description}
       />
 
-      <CampaignCreate />
+      <CampaignCreate t={t.campaign} />
 
       <Card className="mt-5 overflow-hidden">
-        <CardHeader title="전체 캠페인" hint={`${campaigns.length}개`} />
+        <CardHeader title={t.campaign.all} hint={String(campaigns.length)} />
         {campaigns.length === 0 ? (
-          <EmptyState>아직 캠페인이 없습니다. 위에서 첫 캠페인을 만들어 보세요.</EmptyState>
+          <EmptyState>{t.campaign.empty}</EmptyState>
         ) : (
           <Table>
             <THead>
               <tr>
-                <Th>캠페인</Th>
-                <Th numeric>폼</Th>
-                <Th numeric>생성일</Th>
+                <Th>{t.campaign.title}</Th>
+                <Th numeric>{t.form.title}</Th>
+                <Th numeric>{t.form.createdAt}</Th>
               </tr>
             </THead>
             <TBody>
