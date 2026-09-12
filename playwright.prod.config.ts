@@ -1,4 +1,8 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+// Production credentials live only in this gitignored file.
+dotenv.config({ path: ".env.production.local" });
+dotenv.config();
 import { defineConfig, devices } from "@playwright/test";
 
 /**

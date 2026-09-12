@@ -21,11 +21,6 @@ export default async function LoginPage() {
         <Suspense>
           <LoginForm t={t.login} />
         </Suspense>
-
-        <p className="mt-8 border-t border-line pt-5 text-xs leading-relaxed text-ink-3">
-          {t.login.demoAccount} · <span className="font-mono text-ink-2">admin@example.com</span> /{" "}
-          <span className="font-mono text-ink-2">admin1234</span>
-        </p>
       </div>
     </main>
   );

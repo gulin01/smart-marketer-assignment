@@ -16,7 +16,7 @@
 | 관리 화면 | https://glowup-admin-app.vercel.app |
 | 공개 폼 | https://glowup-forms.vercel.app |
 | API 문서 | https://glowup-admin-app.vercel.app/api-docs |
-| 계정 | `admin@example.com` / `admin1234` |
+| 계정 | 제출 메일에 별도 기재 |
 
 관리 화면과 공개 폼이 **서로 다른 도메인**에서 서빙됩니다. 업로드된 템플릿이
 실행되는 오리진에는 세션 쿠키가 구조적으로 존재할 수 없습니다
@@ -51,7 +51,7 @@ npm run dev
 
 | | |
 |---|---|
-| 계정 | `admin@example.com` / `admin1234` |
+| 로컬 계정 | `.env` 의 `ADMIN_EMAIL` / `ADMIN_PASSWORD` (예시값은 `.env.example`) |
 | API 문서 | http://localhost:3000/api-docs |
 
 > **포트 안내** — PostgreSQL 컨테이너는 호스트의 **5434** 포트에 바인딩됩니다.

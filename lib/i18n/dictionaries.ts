@@ -35,7 +35,6 @@ export const ko = {
     submit: "로그인",
     submitting: "로그인 중…",
     failed: "로그인에 실패했습니다",
-    demoAccount: "데모 계정",
   },
 
   dashboard: {
@@ -231,7 +230,6 @@ export const en: Loose<Dictionary> = {
     submit: "Sign in",
     submitting: "Signing in…",
     failed: "Sign-in failed",
-    demoAccount: "Demo account",
   },
 
   dashboard: {
