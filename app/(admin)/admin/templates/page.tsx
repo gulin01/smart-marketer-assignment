@@ -1,9 +1,21 @@
 import { prisma } from "@/lib/db";
-import { Card, EmptyState, PageHeader, formatDate } from "@/components/ui";
+import {
+  Card,
+  CardHeader,
+  Code,
+  EmptyState,
+  PageHeader,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  formatDate,
+} from "@/components/ui";
 import TemplateUpload from "./template-upload";
 import TemplatePreview from "./template-preview";
 
-export const metadata = { title: "HTML 템플릿 · Lead Magnet CRM" };
+export const metadata = { title: "템플릿 · Lead Magnet CRM" };
 export const dynamic = "force-dynamic";
 
 export default async function TemplatesPage() {
@@ -22,50 +34,48 @@ export default async function TemplatesPage() {
     <>
       <PageHeader
         title="HTML 템플릿"
-        description="운영자가 업로드한 HTML 파일입니다. 업로드된 HTML은 수정되지 않고 그대로 저장되며, 렌더링 시 샌드박스 iframe 안에서만 실행됩니다."
+        description="업로드한 HTML은 수정 없이 그대로 저장되고, 방문자에게는 샌드박스 iframe 안에서만 렌더링됩니다. `<form>` 하나와 이름이 있는 입력 필드가 필요합니다."
       />
 
       <TemplateUpload />
 
-      <Card className="mt-6 overflow-hidden">
+      <Card className="mt-5 overflow-hidden">
+        <CardHeader title="등록된 템플릿" hint={`${templates.length}개`} />
         {templates.length === 0 ? (
           <EmptyState>아직 업로드된 템플릿이 없습니다.</EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
+          <Table>
+            <THead>
               <tr>
-                <th className="px-4 py-2.5 font-medium">이름</th>
-                <th className="px-4 py-2.5 font-medium">입력 필드</th>
-                <th className="px-4 py-2.5 font-medium">사용 폼</th>
-                <th className="px-4 py-2.5 font-medium">등록일</th>
-                <th className="px-4 py-2.5" />
+                <Th>이름</Th>
+                <Th>입력 필드</Th>
+                <Th numeric>사용 폼</Th>
+                <Th numeric>등록일</Th>
+                <Th />
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            </THead>
+            <TBody>
               {templates.map((template) => (
-                <tr key={template.id}>
-                  <td className="px-4 py-3 font-medium">{template.name}</td>
-                  <td className="px-4 py-3">
+                <tr key={template.id} className="transition-colors hover:bg-surface-2">
+                  <Td className="font-medium text-ink">{template.name}</Td>
+                  <Td>
                     <div className="flex flex-wrap gap-1">
                       {template.fieldNames.map((field) => (
-                        <code
-                          key={field}
-                          className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs dark:bg-neutral-800"
-                        >
-                          {field}
-                        </code>
+                        <Code key={field}>{field}</Code>
                       ))}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{template._count.forms}</td>
-                  <td className="px-4 py-3 text-neutral-500">{formatDate(template.createdAt)}</td>
-                  <td className="px-4 py-3 text-right">
+                  </Td>
+                  <Td numeric>{template._count.forms}</Td>
+                  <Td numeric className="whitespace-nowrap text-ink-3">
+                    {formatDate(template.createdAt)}
+                  </Td>
+                  <Td className="text-right">
                     <TemplatePreview templateId={template.id} name={template.name} />
-                  </td>
+                  </Td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
       </Card>
     </>

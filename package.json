@@ -23,7 +23,8 @@
     "predev": "node scripts/copy-swagger-assets.mjs",
     "prebuild": "node scripts/copy-swagger-assets.mjs",
     "test:prod": "playwright test --config=playwright.prod.config.ts",
-    "clean:prod": "tsx scripts/clean-smoke-data.ts"
+    "clean:prod": "tsx scripts/clean-smoke-data.ts",
+    "shots": "playwright test --config=playwright.shots.config.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

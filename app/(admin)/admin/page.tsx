@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
-import { MetricCell, StatTile, formatPercent } from "@/components/stats";
+import {
+  Card,
+  CardHeader,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  formatNumber,
+} from "@/components/ui";
+import { ConversionMeter, StatTile, formatPercent } from "@/components/stats";
 import { getCampaignStats } from "@/lib/stats";
 
 export const metadata = { title: "대시보드 · Lead Magnet CRM" };
@@ -22,63 +34,71 @@ export default async function DashboardPage() {
     }),
     { visits: 0, visitors: 0, submissions: 0 },
   );
-  const overallConversion = totals.visitors === 0 ? 0 : totals.submissions / totals.visitors;
+  const overall = totals.visitors === 0 ? 0 : totals.submissions / totals.visitors;
 
   return (
     <>
       <PageHeader
         title="대시보드"
-        description="방문(Visit)은 폼 페이지 로드 수, 방문자(Visitor)는 쿠키 기준 순 방문자 수, 전환율은 제출 ÷ 방문자입니다."
+        description="캠페인별 리드 수집 성과를 한 화면에서 비교합니다."
+        action={
+          <LinkButton href="/admin/campaigns" variant="primary">
+            캠페인 만들기
+          </LinkButton>
+        }
       />
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="방문" value={totals.visits.toLocaleString("ko-KR")} />
-        <StatTile label="방문자" value={totals.visitors.toLocaleString("ko-KR")} hint="쿠키 기준 순 방문자" />
-        <StatTile label="제출" value={totals.submissions.toLocaleString("ko-KR")} />
-        <StatTile label="전환율" value={formatPercent(overallConversion)} hint="제출 ÷ 방문자" />
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label="방문" value={formatNumber(totals.visits)} hint="폼 페이지 로드 수" />
+        <StatTile label="방문자" value={formatNumber(totals.visitors)} hint="쿠키 기준 순 방문자" />
+        <StatTile label="제출" value={formatNumber(totals.submissions)} hint="수집된 리드" />
+        <StatTile label="전환율" value={formatPercent(overall)} hint="제출 ÷ 방문자" emphasis />
       </div>
 
       <Card className="overflow-hidden">
-        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <h2 className="text-sm font-semibold">캠페인별 성과</h2>
-          <p className="text-xs text-neutral-500">
-            캠페인 {stats.length} · 폼 {formCount} · 템플릿 {templateCount}
-          </p>
-        </div>
+        <CardHeader
+          title="캠페인별 성과"
+          hint={`캠페인 ${stats.length}개 · 폼 ${formCount}개 · 템플릿 ${templateCount}개`}
+        />
         {stats.length === 0 ? (
           <EmptyState>
             아직 캠페인이 없습니다.{" "}
-            <Link href="/admin/campaigns" className="underline">
-              캠페인 만들기
+            <Link href="/admin/campaigns" className="font-medium text-accent hover:underline">
+              첫 캠페인 만들기
             </Link>
           </EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
+          <Table>
+            <THead>
               <tr>
-                <th className="px-4 py-2.5 font-medium">캠페인</th>
-                <th className="px-4 py-2.5 font-medium">방문</th>
-                <th className="px-4 py-2.5 font-medium">방문자</th>
-                <th className="px-4 py-2.5 font-medium">제출</th>
-                <th className="px-4 py-2.5 font-medium">전환율</th>
+                <Th>캠페인</Th>
+                <Th numeric>방문</Th>
+                <Th numeric>방문자</Th>
+                <Th numeric>제출</Th>
+                <Th numeric>전환율</Th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            </THead>
+            <TBody>
               {stats.map((row) => (
-                <tr key={row.campaignId} className="hover:bg-neutral-50 dark:hover:bg-neutral-950">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/campaigns/${row.campaignId}`} className="font-medium hover:underline">
+                <tr key={row.campaignId} className="transition-colors hover:bg-surface-2">
+                  <Td>
+                    <Link
+                      href={`/admin/campaigns/${row.campaignId}`}
+                      className="font-medium text-ink hover:text-accent"
+                    >
                       {row.campaignName}
                     </Link>
-                  </td>
-                  <MetricCell value={row.visits} />
-                  <MetricCell value={row.visitors} />
-                  <MetricCell value={row.submissions} />
-                  <td className="px-4 py-3 font-medium tabular-nums">{formatPercent(row.conversionRate)}</td>
+                  </Td>
+                  <Td numeric>{formatNumber(row.visits)}</Td>
+                  <Td numeric>{formatNumber(row.visitors)}</Td>
+                  <Td numeric>{formatNumber(row.submissions)}</Td>
+                  <Td numeric>
+                    <ConversionMeter ratio={row.conversionRate} />
+                  </Td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
       </Card>
     </>

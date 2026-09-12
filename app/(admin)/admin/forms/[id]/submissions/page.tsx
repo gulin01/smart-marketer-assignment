@@ -1,8 +1,24 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { Breadcrumb, Card, ChannelBadge, EmptyState, PageHeader, formatDate } from "@/components/ui";
+import {
+  AnchorButton,
+  Breadcrumb,
+  Card,
+  CardHeader,
+  ChannelTag,
+  EmptyState,
+  PageHeader,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  formatDate,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
+
+const MAX_ROWS = 500;
 
 export default async function FormSubmissionsPage({
   params,
@@ -14,7 +30,8 @@ export default async function FormSubmissionsPage({
     include: {
       campaign: { select: { id: true, name: true } },
       template: { select: { fieldNames: true } },
-      submissions: { orderBy: { createdAt: "desc" }, take: 500 },
+      submissions: { orderBy: { createdAt: "desc" }, take: MAX_ROWS },
+      _count: { select: { submissions: true } },
     },
   });
 
@@ -32,64 +49,59 @@ export default async function FormSubmissionsPage({
       />
       <PageHeader
         title="제출 내역"
-        description={`최근 500건까지 표시합니다. 전체 데이터는 CSV로 내려받으세요.`}
+        description={`수집된 리드 ${form._count.submissions.toLocaleString("ko-KR")}건. 화면에는 최근 ${MAX_ROWS}건까지 표시되며, 전체는 CSV로 내려받을 수 있습니다.`}
         action={
-          <a
-            href={`/api/forms/${form.id}/submissions?format=csv`}
-            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
-          >
+          <AnchorButton href={`/api/forms/${form.id}/submissions?format=csv`} variant="primary">
             CSV 내보내기
-          </a>
+          </AnchorButton>
         }
       />
 
       <Card className="overflow-hidden">
+        <CardHeader title="리드" hint={`표시 ${form.submissions.length}건`} />
         {form.submissions.length === 0 ? (
-          <EmptyState>아직 제출된 내역이 없습니다.</EmptyState>
+          <EmptyState>
+            아직 제출된 내역이 없습니다. 배포 링크를 공유하면 여기에 리드가 쌓입니다.
+          </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
-                <tr>
-                  <th className="px-4 py-2.5 font-medium">이름</th>
-                  <th className="px-4 py-2.5 font-medium">연락처</th>
-                  <th className="px-4 py-2.5 font-medium">이메일</th>
-                  <th className="px-4 py-2.5 font-medium">채널</th>
-                  <th className="px-4 py-2.5 font-medium">제출일시</th>
-                  <th className="px-4 py-2.5 font-medium">전체 응답</th>
+          <Table>
+            <THead>
+              <tr>
+                <Th>이름</Th>
+                <Th>연락처</Th>
+                <Th>이메일</Th>
+                <Th>채널</Th>
+                <Th>전체 응답</Th>
+                <Th numeric>제출일시</Th>
+              </tr>
+            </THead>
+            <TBody>
+              {form.submissions.map((submission) => (
+                <tr key={submission.id} className="transition-colors hover:bg-surface-2">
+                  <Td className="font-medium text-ink">{submission.name ?? "—"}</Td>
+                  <Td className="text-ink-2">{submission.phone ?? "—"}</Td>
+                  <Td className="text-ink-2">{submission.email ?? "—"}</Td>
+                  <Td>
+                    <ChannelTag channel={submission.channel} />
+                  </Td>
+                  <Td>
+                    <details className="group">
+                      <summary className="cursor-pointer list-none text-xs text-ink-3 transition-colors hover:text-ink">
+                        <span className="group-open:hidden">보기 ▾</span>
+                        <span className="hidden group-open:inline">접기 ▴</span>
+                      </summary>
+                      <pre className="mt-2 max-w-sm overflow-x-auto rounded-lg bg-surface-2 p-3 font-mono text-[11px] leading-relaxed text-ink-2">
+                        {JSON.stringify(submission.data, null, 2)}
+                      </pre>
+                    </details>
+                  </Td>
+                  <Td numeric className="whitespace-nowrap text-ink-3">
+                    {formatDate(submission.createdAt)}
+                  </Td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {form.submissions.map((submission) => (
-                  <tr key={submission.id} className="align-top">
-                    <td className="px-4 py-3 font-medium">{submission.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
-                      {submission.phone ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
-                      {submission.email ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <ChannelBadge channel={submission.channel} />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-neutral-500">
-                      {formatDate(submission.createdAt)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <details>
-                        <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
-                          보기
-                        </summary>
-                        <pre className="mt-2 max-w-md overflow-x-auto rounded bg-neutral-50 p-2 text-xs dark:bg-neutral-950">
-                          {JSON.stringify(submission.data, null, 2)}
-                        </pre>
-                      </details>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </TBody>
+          </Table>
         )}
       </Card>
     </>

@@ -1,20 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { Breadcrumb, Card, EmptyState, PageHeader, formatDate } from "@/components/ui";
-import { BarChart, MetricCell, formatPercent } from "@/components/stats";
+import {
+  Badge,
+  Breadcrumb,
+  Card,
+  CardHeader,
+  ChannelTag,
+  Code,
+  EmptyState,
+  PageHeader,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  formatDate,
+  formatNumber,
+} from "@/components/ui";
+import { ChannelBars, ConversionMeter, StatTile, formatPercent } from "@/components/stats";
 import { getChannelStats } from "@/lib/stats";
 import FormCreate from "./form-create";
-
-const CHANNEL_LABELS: Record<string, string> = {
-  INSTAGRAM: "Instagram",
-  X: "X",
-  YOUTUBE: "YouTube",
-  THREADS: "Threads",
-};
-
-const channelLabel = (channel: string | null) =>
-  channel ? (CHANNEL_LABELS[channel] ?? channel) : "직접 유입";
 
 export const dynamic = "force-dynamic";
 
@@ -34,108 +40,122 @@ export default async function CampaignDetailPage({ params }: PageProps<"/admin/c
         },
       },
     }),
-    prisma.htmlTemplate.findMany({
-      orderBy: { createdAt: "desc" },
-      select: { id: true, name: true },
-    }),
+    prisma.htmlTemplate.findMany({ orderBy: { createdAt: "desc" }, select: { id: true, name: true } }),
     getChannelStats(id),
   ]);
 
   if (!campaign) notFound();
+
+  const totals = channels.reduce(
+    (acc, row) => ({
+      visits: acc.visits + row.visits,
+      visitors: acc.visitors + row.visitors,
+      submissions: acc.submissions + row.submissions,
+    }),
+    { visits: 0, visitors: 0, submissions: 0 },
+  );
+  const overall = totals.visitors === 0 ? 0 : totals.submissions / totals.visitors;
 
   return (
     <>
       <Breadcrumb items={[{ label: "캠페인", href: "/admin/campaigns" }, { label: campaign.name }]} />
       <PageHeader title={campaign.name} description={campaign.description ?? undefined} />
 
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label="방문" value={formatNumber(totals.visits)} />
+        <StatTile label="방문자" value={formatNumber(totals.visitors)} />
+        <StatTile label="제출" value={formatNumber(totals.submissions)} />
+        <StatTile label="전환율" value={formatPercent(overall)} emphasis />
+      </div>
+
       <Card className="mb-6 overflow-hidden">
-        <div className="border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <h2 className="text-sm font-semibold">채널별 성과</h2>
-          <p className="mt-0.5 text-xs text-neutral-500">전환율 = 제출 ÷ 방문자</p>
-        </div>
-        <div className="grid gap-6 p-4 lg:grid-cols-2">
-          <table className="h-fit w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
+        <CardHeader title="채널별 성과" hint="어느 채널이 실제로 리드를 만들고 있는지 비교합니다." />
+        <div className="grid gap-8 p-5 lg:grid-cols-[1.4fr_1fr]">
+          <Table>
+            <THead>
               <tr>
-                <th className="pb-2 font-medium">채널</th>
-                <th className="pb-2 font-medium">방문</th>
-                <th className="pb-2 font-medium">방문자</th>
-                <th className="pb-2 font-medium">제출</th>
-                <th className="pb-2 font-medium">전환율</th>
+                <Th>채널</Th>
+                <Th numeric>방문</Th>
+                <Th numeric>방문자</Th>
+                <Th numeric>제출</Th>
+                <Th numeric>전환율</Th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            </THead>
+            <TBody>
               {channels.map((row) => (
                 <tr key={row.channel ?? "direct"}>
-                  <td className="py-2.5 pr-4 font-medium">{channelLabel(row.channel)}</td>
-                  <MetricCell value={row.visits} />
-                  <MetricCell value={row.visitors} />
-                  <MetricCell value={row.submissions} />
-                  <td className="px-4 py-2.5 font-medium tabular-nums">
-                    {formatPercent(row.conversionRate)}
-                  </td>
+                  <Td>
+                    <ChannelTag channel={row.channel} />
+                  </Td>
+                  <Td numeric>{formatNumber(row.visits)}</Td>
+                  <Td numeric>{formatNumber(row.visitors)}</Td>
+                  <Td numeric>{formatNumber(row.submissions)}</Td>
+                  <Td numeric>
+                    <ConversionMeter ratio={row.conversionRate} />
+                  </Td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          <BarChart
+            </TBody>
+          </Table>
+
+          <ChannelBars
             label="채널별 제출 수"
-            rows={channels.map((row) => ({
-              key: row.channel ?? "direct",
-              label: channelLabel(row.channel),
-              value: row.submissions,
-            }))}
+            rows={channels.map((row) => ({ channel: row.channel, value: row.submissions }))}
+            emptyNote="아직 제출이 없습니다. 배포 링크를 공유하면 여기에 채널별로 집계됩니다."
           />
         </div>
       </Card>
 
       <FormCreate campaignId={campaign.id} templates={templates} />
 
-      <Card className="mt-6 overflow-hidden">
+      <Card className="mt-5 overflow-hidden">
+        <CardHeader title="폼" hint={`${campaign.forms.length}개`} />
         {campaign.forms.length === 0 ? (
           <EmptyState>
-            아직 폼이 없습니다. {templates.length === 0 && "먼저 HTML 템플릿을 업로드하세요."}
+            아직 폼이 없습니다.
+            {templates.length === 0 && " 먼저 HTML 템플릿을 업로드하세요."}
           </EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
+          <Table>
+            <THead>
               <tr>
-                <th className="px-4 py-2.5 font-medium">폼</th>
-                <th className="px-4 py-2.5 font-medium">템플릿</th>
-                <th className="px-4 py-2.5 font-medium">배포 링크</th>
-                <th className="px-4 py-2.5 font-medium">제출</th>
-                <th className="px-4 py-2.5 font-medium">상태</th>
-                <th className="px-4 py-2.5 font-medium">생성일</th>
+                <Th>폼</Th>
+                <Th>템플릿</Th>
+                <Th numeric>링크</Th>
+                <Th numeric>제출</Th>
+                <Th>상태</Th>
+                <Th numeric>생성일</Th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            </THead>
+            <TBody>
               {campaign.forms.map((form) => (
-                <tr key={form.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-950">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/forms/${form.id}`} className="font-medium hover:underline">
+                <tr key={form.id} className="transition-colors hover:bg-surface-2">
+                  <Td>
+                    <Link
+                      href={`/admin/forms/${form.id}`}
+                      className="font-medium text-ink hover:text-accent"
+                    >
                       {form.title}
                     </Link>
-                    <p className="mt-0.5 font-mono text-xs text-neutral-500">/f/{form.slug}</p>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{form.template.name}</td>
-                  <td className="px-4 py-3 text-neutral-500">{form._count.links}개</td>
-                  <td className="px-4 py-3 text-neutral-500">{form._count.submissions}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                        form.isActive
-                          ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-                          : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
-                      }`}
-                    >
+                    <p className="mt-1">
+                      <Code>/f/{form.slug}</Code>
+                    </p>
+                  </Td>
+                  <Td className="text-ink-3">{form.template.name}</Td>
+                  <Td numeric>{form._count.links}</Td>
+                  <Td numeric>{form._count.submissions}</Td>
+                  <Td>
+                    <Badge tone={form.isActive ? "ok" : "muted"}>
                       {form.isActive ? "활성" : "비활성"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{formatDate(form.createdAt)}</td>
+                    </Badge>
+                  </Td>
+                  <Td numeric className="whitespace-nowrap text-ink-3">
+                    {formatDate(form.createdAt)}
+                  </Td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
       </Card>
     </>

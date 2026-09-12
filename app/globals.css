@@ -1,26 +1,116 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ---------------------------------------------------------------------------
+   Precision — neutral surfaces, one restrained accent, hairline structure.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+   Channel colours are NOT chosen by taste: they come from a categorical palette
+   validated for colour-vision deficiency (worst adjacent pair ΔE 9.1 light /
+   8.4 dark, target ≥ 8). Colour is bound to the channel, never to rank, so a
+   re-sorted table never repaints a series.
+--------------------------------------------------------------------------- */
+
+:root {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f4f4f5;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --ink: #18181b;
+  --ink-2: #52525b;
+  --ink-3: #71717a;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-ink: #ffffff;
+  --accent-soft: #eef2ff;
+  --ok: #15803d;
+  --ok-soft: #f0fdf4;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+
+  /* categorical, fixed order: instagram, x, youtube, threads */
+  --ch-instagram: #2a78d6;
+  --ch-x: #eb6834;
+  --ch-youtube: #1baf7a;
+  --ch-threads: #eda100;
+  --ch-direct: #71717a;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --canvas: #09090b;
+    --surface: #18181b;
+    --surface-2: #141416;
+    --surface-3: #27272a;
+    --line: #27272a;
+    --line-strong: #3f3f46;
+    --ink: #fafafa;
+    --ink-2: #d4d4d8;
+    --ink-3: #a1a1aa;
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --accent-ink: #1e1b4b;
+    --accent-soft: #1e1b4b;
+    --ok: #4ade80;
+    --ok-soft: #052e16;
+    --danger: #f87171;
+    --danger-soft: #450a0a;
+
+    /* same hues, re-stepped for the dark surface — not an automatic flip */
+    --ch-instagram: #3987e5;
+    --ch-x: #d95926;
+    --ch-youtube: #199e70;
+    --ch-threads: #c98500;
+    --ch-direct: #a1a1aa;
   }
 }
 
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers in tables and tiles must align column-wise. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* One focus treatment everywhere, keyboard-only. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
 }

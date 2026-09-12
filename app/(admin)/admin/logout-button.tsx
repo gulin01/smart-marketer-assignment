@@ -2,14 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      className="px-2.5 py-1 text-xs"
       disabled={pending}
       onClick={async () => {
         setPending(true);
@@ -17,9 +19,8 @@ export default function LogoutButton() {
         router.replace("/login");
         router.refresh();
       }}
-      className="rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
     >
       로그아웃
-    </button>
+    </Button>
   );
 }

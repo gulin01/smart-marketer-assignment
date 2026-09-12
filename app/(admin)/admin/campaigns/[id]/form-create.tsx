@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, Card, ErrorText, Field, inputClass } from "@/components/ui";
 
 export default function FormCreate({
   campaignId,
@@ -16,13 +17,15 @@ export default function FormCreate({
 
   if (templates.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-neutral-300 px-4 py-6 text-center text-sm text-neutral-500 dark:border-neutral-700">
-        폼을 만들려면 먼저{" "}
-        <a href="/admin/templates" className="underline">
-          HTML 템플릿
+      <div className="rounded-xl border border-dashed border-line-strong px-5 py-8 text-center">
+        <p className="text-sm text-ink-2">폼을 만들려면 HTML 템플릿이 먼저 필요합니다.</p>
+        <a
+          href="/admin/templates"
+          className="mt-1 inline-block text-sm font-medium text-accent hover:underline"
+        >
+          템플릿 업로드하러 가기 →
         </a>
-        을 업로드하세요.
-      </p>
+      </div>
     );
   }
 
@@ -57,53 +60,33 @@ export default function FormCreate({
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <label className="flex-1 min-w-45">
-        <span className="mb-1 block text-sm font-medium">폼 제목</span>
-        <input
-          name="title"
-          required
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-        />
-      </label>
-      <label className="flex-1 min-w-45">
-        <span className="mb-1 block text-sm font-medium">HTML 템플릿</span>
-        <select
-          name="templateId"
-          required
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-        >
-          {templates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex-1 min-w-40">
-        <span className="mb-1 block text-sm font-medium">슬러그 (선택)</span>
-        <input
-          name="slug"
-          pattern="[a-z0-9\-]{3,64}"
-          placeholder="자동 생성"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-        />
-      </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-      >
-        {pending ? "생성 중…" : "폼 생성"}
-      </button>
-      {error && (
-        <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-    </form>
+    <Card className="p-5">
+      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+        <Field label="폼 제목" className="min-w-44 flex-1">
+          <input name="title" required placeholder="봄 스킨케어 가이드" className={inputClass} />
+        </Field>
+        <Field label="HTML 템플릿" className="min-w-44 flex-1">
+          <select name="templateId" required className={inputClass}>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="슬러그 (선택)" className="min-w-40 flex-1">
+          <input
+            name="slug"
+            pattern="[a-z0-9\-]{3,64}"
+            placeholder="자동 생성"
+            className={`${inputClass} font-mono`}
+          />
+        </Field>
+        <Button type="submit" disabled={pending}>
+          {pending ? "생성 중…" : "폼 생성"}
+        </Button>
+        {error && <div className="w-full">{<ErrorText>{error}</ErrorText>}</div>}
+      </form>
+    </Card>
   );
 }

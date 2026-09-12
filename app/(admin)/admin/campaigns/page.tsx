@@ -1,6 +1,17 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { Card, EmptyState, PageHeader, formatDate } from "@/components/ui";
+import {
+  Card,
+  CardHeader,
+  EmptyState,
+  PageHeader,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  formatDate,
+} from "@/components/ui";
 import CampaignCreate from "./campaign-create";
 
 export const metadata = { title: "캠페인 · Lead Magnet CRM" };
@@ -14,38 +25,48 @@ export default async function CampaignsPage() {
 
   return (
     <>
-      <PageHeader title="캠페인" description="캠페인 단위로 폼을 묶고 성과를 비교합니다." />
+      <PageHeader
+        title="캠페인"
+        description="캠페인 단위로 폼을 묶고, 채널별 성과를 비교합니다."
+      />
+
       <CampaignCreate />
 
-      <Card className="mt-6 overflow-hidden">
+      <Card className="mt-5 overflow-hidden">
+        <CardHeader title="전체 캠페인" hint={`${campaigns.length}개`} />
         {campaigns.length === 0 ? (
-          <EmptyState>아직 캠페인이 없습니다.</EmptyState>
+          <EmptyState>아직 캠페인이 없습니다. 위에서 첫 캠페인을 만들어 보세요.</EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-neutral-200 bg-neutral-50 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-950">
+          <Table>
+            <THead>
               <tr>
-                <th className="px-4 py-2.5 font-medium">캠페인</th>
-                <th className="px-4 py-2.5 font-medium">폼 수</th>
-                <th className="px-4 py-2.5 font-medium">생성일</th>
+                <Th>캠페인</Th>
+                <Th numeric>폼</Th>
+                <Th numeric>생성일</Th>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            </THead>
+            <TBody>
               {campaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-950">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/campaigns/${campaign.id}`} className="font-medium hover:underline">
+                <tr key={campaign.id} className="transition-colors hover:bg-surface-2">
+                  <Td>
+                    <Link
+                      href={`/admin/campaigns/${campaign.id}`}
+                      className="font-medium text-ink hover:text-accent"
+                    >
                       {campaign.name}
                     </Link>
                     {campaign.description && (
-                      <p className="mt-0.5 text-xs text-neutral-500">{campaign.description}</p>
+                      <p className="mt-0.5 text-xs text-ink-3">{campaign.description}</p>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-500">{campaign._count.forms}</td>
-                  <td className="px-4 py-3 text-neutral-500">{formatDate(campaign.createdAt)}</td>
+                  </Td>
+                  <Td numeric>{campaign._count.forms}</Td>
+                  <Td numeric className="whitespace-nowrap text-ink-3">
+                    {formatDate(campaign.createdAt)}
+                  </Td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+            </TBody>
+          </Table>
         )}
       </Card>
     </>

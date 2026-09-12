@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button, Card, ErrorText, Field, inputClass } from "@/components/ui";
 
 export default function CampaignCreate() {
   const router = useRouter();
@@ -37,38 +38,19 @@ export default function CampaignCreate() {
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
-    >
-      <label className="flex-1 min-w-50">
-        <span className="mb-1 block text-sm font-medium">캠페인 이름</span>
-        <input
-          name="name"
-          required
-          placeholder="2026 봄 프로모션"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-        />
-      </label>
-      <label className="flex-1 min-w-50">
-        <span className="mb-1 block text-sm font-medium">설명 (선택)</span>
-        <input
-          name="description"
-          className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-100"
-        />
-      </label>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-neutral-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-      >
-        {pending ? "생성 중…" : "캠페인 생성"}
-      </button>
-      {error && (
-        <p role="alert" className="w-full text-sm text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-    </form>
+    <Card className="p-5">
+      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+        <Field label="캠페인 이름" className="min-w-56 flex-1">
+          <input name="name" required placeholder="2026 봄 프로모션" className={inputClass} />
+        </Field>
+        <Field label="설명 (선택)" className="min-w-56 flex-1">
+          <input name="description" placeholder="간단한 메모" className={inputClass} />
+        </Field>
+        <Button type="submit" disabled={pending}>
+          {pending ? "생성 중…" : "캠페인 생성"}
+        </Button>
+        {error && <div className="w-full">{<ErrorText>{error}</ErrorText>}</div>}
+      </form>
+    </Card>
   );
 }
