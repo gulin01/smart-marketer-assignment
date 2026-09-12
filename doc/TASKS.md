@@ -148,7 +148,7 @@ Order matters: each day's checkpoint gates the next day.
 ### Ship
 - [x] Vercel + Neon deploy — live, migrations applied, operator seeded
 - [x] Second domain for `FORM_HOST` — `glowup-forms.vercel.app`, origin isolation verified live
-- [ ] Email developer@glowuprizz.com — **yours to send**; draft prepared in `doc/SUBMISSION.md`
+- [ ] Email developer@glowuprizz.com — **yours to send**
 
 ---
 
