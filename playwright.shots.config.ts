@@ -6,7 +6,7 @@ import baseConfig from "./playwright.config";
  *
  *   SHOT_DIR=/tmp/shots npm run shots
  */
-export default {
+const shotsConfig = {
   ...baseConfig,
   testDir: "./tests/screenshots",
   use: {
@@ -16,3 +16,5 @@ export default {
     colorScheme: (process.env.SHOT_SCHEME === "dark" ? "dark" : "light") as "dark" | "light",
   },
 };
+
+export default shotsConfig;
