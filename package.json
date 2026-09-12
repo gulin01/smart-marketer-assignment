@@ -24,7 +24,8 @@
     "prebuild": "node scripts/copy-swagger-assets.mjs",
     "test:prod": "playwright test --config=playwright.prod.config.ts",
     "clean:prod": "tsx scripts/clean-smoke-data.ts",
-    "shots": "playwright test --config=playwright.shots.config.ts"
+    "shots": "playwright test --config=playwright.shots.config.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.0",

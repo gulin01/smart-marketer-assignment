@@ -40,7 +40,10 @@ npm install
 npx prisma migrate deploy
 npm run db:seed
 
-# 5. 개발 서버
+# 5. (선택) 데모 데이터 — 배포된 데모와 동일한 캠페인·트래픽
+npm run seed:demo
+
+# 6. 개발 서버
 npm run dev
 ```
 
