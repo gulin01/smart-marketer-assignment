@@ -54,6 +54,7 @@ next-env.d.ts
 
 # agent skill docs vendored by `prisma init` — 71 files of CLI reference, not project code
 /.agents
-/.claude
 /.windsurf
 /skills-lock.json
+/.claude/skills
+# .claude/commands IS tracked — it is the Spec Kit workflow

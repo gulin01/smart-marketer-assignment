@@ -1,0 +1,97 @@
+name: Deploy to production
+
+# 운영 배포는 자동으로 일어나지 않는다 (헌법 VII).
+# 사람이 수동으로 실행하고, `production` 환경의 리뷰어가 승인해야 진행된다.
+on:
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: "배포에 포함된 스펙 번호 (예: 002)"
+        required: true
+      reason:
+        description: "배포 사유"
+        required: true
+
+jobs:
+  gate:
+    name: DONE 게이트
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: leadmagnet
+          POSTGRES_PASSWORD: leadmagnet
+          POSTGRES_DB: leadmagnet
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U leadmagnet"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://leadmagnet:leadmagnet@localhost:5432/leadmagnet?schema=public
+      DATABASE_URL_TEST: postgresql://leadmagnet:leadmagnet@localhost:5432/leadmagnet_test?schema=public
+      SESSION_SECRET: ci-session-secret-at-least-32-characters-long
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin1234
+      APP_HOST: http://localhost:3000
+      FORM_HOST: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: psql "$DATABASE_URL" -c 'CREATE DATABASE leadmagnet_test OWNER leadmagnet'
+      - run: npx prisma generate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          E2E_PORT: 3100
+
+  deploy:
+    name: 운영 배포
+    needs: gate
+    runs-on: ubuntu-latest
+    # 사람의 승인 지점. GitHub 의 environment protection rules 로 리뷰어를 지정한다.
+    environment:
+      name: production
+      url: https://glowup-admin-app.vercel.app
+
+    steps:
+      - name: 배포 트리거
+        run: |
+          if [ -z "${{ secrets.VERCEL_DEPLOY_HOOK_PROD }}" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK_PROD 시크릿이 없습니다."
+            echo "Vercel → Settings → Git → Deploy Hooks 에서 훅을 만들어 등록하세요."
+            exit 1
+          fi
+          curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_PROD }}"
+          echo "스펙 ${{ inputs.spec }} · 사유: ${{ inputs.reason }}"
+
+  smoke:
+    name: 배포 후 스모크
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: 배포본 대상 스모크
+        run: npm run test:prod
+        env:
+          PROD_ADMIN_HOST: https://glowup-admin-app.vercel.app
+          PROD_FORM_HOST: https://glowup-forms.vercel.app
+          PROD_LEGACY_HOST: https://smart-marketer-assignment.vercel.app
+          PROD_ADMIN_EMAIL: ${{ secrets.PROD_ADMIN_EMAIL }}
+          PROD_ADMIN_PASSWORD: ${{ secrets.PROD_ADMIN_PASSWORD }}

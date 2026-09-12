@@ -121,6 +121,7 @@ npx playwright install chromium
 | API 명세 | [`doc/openapi.yaml`](doc/openapi.yaml) · 실행 중에는 `/api-docs` |
 | 설계 판단 | [`doc/adr/`](doc/adr/) — 가정과 트레이드오프 |
 | 작업 목록 | [`doc/TASKS.md`](doc/TASKS.md) |
+| **개발 프로세스** | [`specs/`](specs/) · [`CLAUDE.md`](CLAUDE.md) · [헌법](.specify/memory/constitution.md) |
 
 구현하지 않은 항목과 알려진 한계는
 [`doc/adr/0008-out-of-scope.md`](doc/adr/0008-out-of-scope.md) 에 정리되어 있습니다.
